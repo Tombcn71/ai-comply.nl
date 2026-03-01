@@ -9,7 +9,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-muted/30">
       <DashboardSidebar />
 
-      <div className="pl-0 pt-16 transition-all duration-300 lg:pl-64 lg:pt-0">
+      <div className="pl-64 transition-all duration-300">
         <DashboardHeader />
 
         <main className="p-6">

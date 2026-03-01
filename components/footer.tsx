@@ -9,7 +9,7 @@ export function Footer() {
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
               <Shield className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">AI Dossier.nl</span>
+            <span className="text-xl font-bold text-foreground">AIBewijs.nl</span>
           </div>
 
           <p className="max-w-md text-lg font-medium text-foreground">
@@ -29,7 +29,7 @@ export function Footer() {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            © 2026 AI Dossier.nl. Alle rechten voorbehouden.
+            © 2026 AIBewijs.nl. Alle rechten voorbehouden.
           </p>
         </div>
       </div>

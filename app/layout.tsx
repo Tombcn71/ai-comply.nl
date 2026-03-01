@@ -8,7 +8,7 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'AI Dossier.nl | Voldoe aan de AI Act zonder gedoe',
+  title: 'AIBewijs.nl | Voldoe aan de AI Act zonder gedoe',
   description: 'Hét Nederlandse compliance-dashboard voor HR en ondernemers. Automatiseer je AI-register, verplichte personeelstraining en bewijslast voor de Autoriteit Persoonsgegevens.',
   generator: 'v0.app',
   icons: {

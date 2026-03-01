@@ -30,14 +30,12 @@ export function Hero() {
           </div>
 
           <h1 className="max-w-4xl text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            Grip op de AI Act vóór 2 augustus 2026
- –{" "}
-            <span className="text-primary">Zonder administratieve rompslomp.</span>
+            Voldoe aan de AI Act vóór 2 augustus 2026 –{" "}
+            <span className="text-primary">Zonder de administratieve rompslomp.</span>
           </h1>
 
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground lg:text-xl">
-           Een overzichtelijk dashboard voor HR en ondernemers dat helpt bij het bijhouden en centraliseren van AI-tools en bewijzen van AI-geletterdheid.
-Veilig opgeslagen binnen de Europese Unie..
+            Hét Nederlandse compliance-dashboard voor HR en ondernemers. Wij automatiseren je AI-register, de verplichte personeelstraining en je bewijslast voor de Autoriteit Persoonsgegevens.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-10 w-full max-w-md">

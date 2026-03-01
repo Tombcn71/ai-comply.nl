@@ -16,7 +16,7 @@ export function Header() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
             <Shield className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="text-lg font-bold text-foreground">AI Dossier.nl</span>
+          <span className="text-lg font-bold text-foreground">AIBewijs.nl</span>
         </div>
 
         <nav className="flex items-center gap-6">

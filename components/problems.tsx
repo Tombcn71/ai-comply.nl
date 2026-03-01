@@ -6,19 +6,19 @@ const problems = [
     icon: EyeOff,
     title: "Shadow AI",
     description:
-      "Medewerkers gebruiken AI-tools zonder dat je het weet. ChatGPT, Copilot, Midjourney — ze worden al ingezet binnen je organisatie. Zonder centraal overzicht ontbreekt grip en documentatie.",
+      "Medewerkers gebruiken AI-tools zonder dat je het weet. ChatGPT, Copilot, Midjourney – ze draaien al binnen je organisatie. Zonder overzicht, geen controle.",
   },
   {
     icon: GraduationCap,
     title: "Wettelijke Scholingsplicht",
     description:
-      "De AI Act vereist dat organisaties aandacht besteden aan AI-geletterdheid. Maar wie houd bij welke medewerkers welke training hebben gevolgd - en waar het bewijs staat?"
+      "Artikel 4 van de AI Act verplicht je om medewerkers AI-geletterd te maken. Maar wie bijhoudt wie wat heeft geleerd? Precies, niemand.",
   },
   {
     icon: FileWarning,
     title: "Audit Stress",
     description:
-      "Bij een inspectie of interne audit blijkt documentatie vaak versnipperd. Losse Excel-bestanden en e-mails maken het lastig om overzicht te geven.",
+      "Straks staat de inspectie voor de deur en heb je geen centraal dossier. Verspreide Excel-bestanden en losse e-mails zijn geen bewijslast.",
   },
 ];
 

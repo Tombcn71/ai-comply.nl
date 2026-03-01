@@ -26,13 +26,10 @@ export function DashboardSidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-card">
-      <Link
-        href="/"
-        className="flex h-16 items-center gap-2 border-b border-border px-6 transition-opacity hover:opacity-80"
-      >
+      <div className="flex h-16 items-center gap-2 border-b border-border px-6">
         <Shield className="h-7 w-7 text-primary" />
-        <span className="text-lg font-bold text-foreground">AI Dossier.nl</span>
-      </Link>
+        <span className="text-lg font-bold text-foreground">AIBewijs.nl</span>
+      </div>
 
       <nav className="flex flex-col gap-1 p-4">
         {navigation.map((item) => {

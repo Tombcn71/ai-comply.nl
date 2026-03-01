@@ -3,35 +3,35 @@ import { LayoutGrid, Activity, FileCheck, Check } from "lucide-react";
 const solutions = [
   {
     icon: LayoutGrid,
-    title: "Het AI-Register",
+    title: "Het Automatische AI-Register",
     description:
-      "Zie welke AI-tools er binnen je organisatie worden gebruikt. Van publieke tools tot interne modellen — alles in één overzicht",
+      "Zie welke tools er binnen je bedrijf draaien. Van ChatGPT tot interne ML-modellen – alles in één overzicht.",
     features: [
-      "Registratie van AI-tools",
-      "Indeling naar risicocategorie",
-      "Vastlegging van systeem informatie",
+      "Automatische detectie van AI-tools",
+      "Risicoklassificatie per systeem",
+      "Inzicht in datastromen",
     ],
   },
   {
     icon: Activity,
-    title: "De Monitor voor AI-geletterdheid",
+    title: "De Compliance-Monitor",
     description:
-      "Volg de AI-trainingen die je team heeft gevolgd. Wie heeft welk bewijs geregistreerd? Altijd actueel inzicht..",
+      "Volg de AI-geletterdheid van je team live. Wie heeft welke training afgerond? Real-time inzicht.",
     features: [
-      "Dashboard per afdeling en team",
-      "Certificaten & overzichten",
+      "Live dashboard per afdeling",
       "Automatische herinneringen",
+      "Certificaten & rapportages",
     ],
   },
   {
     icon: FileCheck,
-    title: "Documentatie & Export",
+    title: "Eén Knop voor de Inspectie",
     description:
-      "Bundel alle vastgelegde informatie in een dossier. Geschikt voor interne verantwoording en audits.",
+      "Genereer direct een volledig PDF-dossier met alle bewijslast. Geen paniek bij een audit.",
     features: [
-      "Centraal documentatie-overzicht",
-      "Ingebouwde audit-trail",
-      "Export naar PDF met één klik",
+      "Compleet bewijs-dossier",
+      "Audit-trail ingebouwd",
+      "Export in 1 klik",
     ],
   },
 ];
@@ -45,10 +45,10 @@ export function Solutions() {
             De Oplossing
           </p>
           <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Drie modules. Eén platform. Inzicht en documentatie op één plek.
+            Drie modules. Eén platform. Volledige compliance.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-           AI Dossier.nl ondersteunt organisaties bij het vastleggen, monitoren en centraliseren van AI-gerelateerde verplichtingen.
+            AIBewijs.nl automatiseert alles wat je nodig hebt om te voldoen aan de AI Act.
           </p>
         </div>
 
