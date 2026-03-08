@@ -16,6 +16,7 @@ import {
   type AiTool,
   type Employee,
 } from '@/lib/db';
+import { uploadCertificateToCellar } from '@/lib/s3';
 
 /**
  * Get all AI tools
@@ -203,6 +204,40 @@ export async function getCertificationStatsAction(): Promise<{
     return await getCertificationStats();
   } catch (error) {
     console.error('[Server Action] Error fetching stats:', error);
+    throw error;
+  }
+}
+
+/**
+ * Upload certificate to Cellar S3 and update employee
+ */
+export async function uploadCertificateAction(
+  employeeId: string,
+  formData: FormData
+): Promise<Employee | null> {
+  try {
+    const file = formData.get('certificate') as File;
+    
+    if (!file) {
+      throw new Error('No file provided');
+    }
+
+    if (!employeeId) {
+      throw new Error('Employee ID is required');
+    }
+
+    console.log('[Server Action] Uploading certificate for employee:', employeeId);
+
+    // Upload to Cellar S3
+    const certificateUrl = await uploadCertificateToCellar(file, employeeId);
+
+    // Update employee in database
+    const result = await updateEmployeeCertification(employeeId, certificateUrl);
+    
+    revalidatePath('/dashboard/training');
+    return result;
+  } catch (error) {
+    console.error('[Server Action] Error uploading certificate:', error);
     throw error;
   }
 }
