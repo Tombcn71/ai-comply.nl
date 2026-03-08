@@ -35,8 +35,8 @@ import { AlertTriangle, FileText, Upload, Users, TrendingUp, Plus } from "lucide
 import {
   getEmployeesAction,
   getCertificationStatsAction,
-  certifyEmployeeAction,
   createEmployeeAction,
+  uploadCertificateAction,
 } from "@/app/actions/tools";
 
 interface Employee {
@@ -98,11 +98,17 @@ export default function TrainingPage() {
   };
 
   const handleUploadSubmit = async () => {
-    if (!selectedEmployee || !certDate) return;
+    if (!selectedEmployee || !certDate || !selectedFile) {
+      setError("Vul alle velden in inclusief het bestand");
+      return;
+    }
 
     try {
-      const certificateUrl = selectedFile?.name || `cert_${selectedEmployee.name}`;
-      await certifyEmployeeAction(selectedEmployee.id, certificateUrl);
+      setError(null);
+      const formData = new FormData();
+      formData.append('certificate', selectedFile);
+
+      await uploadCertificateAction(selectedEmployee.id, formData);
       await loadData();
       setIsUploadOpen(false);
       setSelectedEmployee(null);
@@ -110,6 +116,7 @@ export default function TrainingPage() {
       setSelectedFile(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save certification");
+      console.error("Upload error:", err);
     }
   };
 
@@ -353,10 +360,15 @@ export default function TrainingPage() {
                         </TableCell>
                         <TableCell>
                           {employee.certificate_url ? (
-                            <div className="flex items-center gap-2 text-primary">
-                              <FileText className="h-4 w-4" />
-                              <span className="text-sm">PDF</span>
-                            </div>
+                            <a
+                              href={employee.certificate_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-blue-600 hover:underline"
+                            >
+                              <FileText size={14} />
+                              PDF
+                            </a>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
@@ -436,7 +448,7 @@ export default function TrainingPage() {
             <Button variant="outline" onClick={() => setIsUploadOpen(false)}>
               Annuleren
             </Button>
-            <Button onClick={handleUploadSubmit} disabled={!certDate}>
+            <Button onClick={handleUploadSubmit} disabled={!certDate || !selectedFile}>
               Uploaden
             </Button>
           </DialogFooter>
