@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import {
   Plus,
   Search,
@@ -46,19 +46,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
-
-type RiskCategory = "minimaal" | "beperkt" | "hoog" | "onaanvaardbaar";
-type Department = "Marketing" | "HR" | "IT" | "Sales";
-
-interface Tool {
-  id: string;
-  name: string;
-  department: Department;
-  risk: RiskCategory;
-  dateAdded: string;
-  purpose: string;
-  isCompliant: boolean;
-}
+import {
+  getTools,
+  createTool,
+  updateTool,
+  deleteTool,
+  toggleCompliance,
+  type Tool,
+  type RiskCategory,
+  type Department,
+} from "@/app/actions/tools";
 
 const riskConfig: Record<
   RiskCategory,
@@ -82,51 +79,14 @@ const riskConfig: Record<
   },
 };
 
-const initialTools: Tool[] = [
-  {
-    id: "1",
-    name: "ChatGPT",
-    department: "Marketing",
-    risk: "beperkt",
-    dateAdded: "2024-01-15",
-    purpose: "Content creatie en klantenservice chatbot",
-    isCompliant: true,
-  },
-  {
-    id: "2",
-    name: "Midjourney",
-    department: "Marketing",
-    risk: "minimaal",
-    dateAdded: "2024-02-20",
-    purpose: "Visuele content generatie voor campagnes",
-    isCompliant: true,
-  },
-  {
-    id: "3",
-    name: "Jasper",
-    department: "Sales",
-    risk: "minimaal",
-    dateAdded: "2024-03-10",
-    purpose: "Verkoopteksten en e-mail automatisering",
-    isCompliant: false,
-  },
-  {
-    id: "4",
-    name: "Recruiting-bot",
-    department: "HR",
-    risk: "hoog",
-    dateAdded: "2024-04-05",
-    purpose: "Automatische CV-screening en kandidaat matching",
-    isCompliant: false,
-  },
-];
-
 export default function AIRegisterPage() {
-  const [tools, setTools] = useState<Tool[]>(initialTools);
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [toolsLoaded, setToolsLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [riskFilter, setRiskFilter] = useState<RiskCategory | "all">("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -134,6 +94,15 @@ export default function AIRegisterPage() {
     risk: "" as RiskCategory | "",
     purpose: "",
   });
+
+  // Load tools on mount
+  if (!toolsLoaded) {
+    startTransition(async () => {
+      const data = await getTools();
+      setTools(data);
+      setToolsLoaded(true);
+    });
+  }
 
   const filteredTools = tools.filter((tool) => {
     const matchesSearch = tool.name
@@ -146,34 +115,31 @@ export default function AIRegisterPage() {
   const handleSubmit = () => {
     if (!formData.name || !formData.department || !formData.risk) return;
 
-    if (editingTool) {
-      setTools(
-        tools.map((tool) =>
-          tool.id === editingTool.id
-            ? {
-                ...tool,
-                name: formData.name,
-                department: formData.department as Department,
-                risk: formData.risk as RiskCategory,
-                purpose: formData.purpose,
-              }
-            : tool
-        )
-      );
-    } else {
-      const newTool: Tool = {
-        id: Date.now().toString(),
-        name: formData.name,
-        department: formData.department as Department,
-        risk: formData.risk as RiskCategory,
-        dateAdded: new Date().toISOString().split("T")[0],
-        purpose: formData.purpose,
-        isCompliant: false,
-      };
-      setTools([...tools, newTool]);
-    }
-
-    resetForm();
+    startTransition(async () => {
+      try {
+        if (editingTool) {
+          await updateTool(editingTool.id, {
+            name: formData.name,
+            department: formData.department as Department,
+            risk: formData.risk as RiskCategory,
+            purpose: formData.purpose,
+          });
+        } else {
+          await createTool({
+            name: formData.name,
+            department: formData.department as Department,
+            risk: formData.risk as RiskCategory,
+            purpose: formData.purpose,
+            isCompliant: false,
+          });
+        }
+        const updated = await getTools();
+        setTools(updated);
+        resetForm();
+      } catch (error) {
+        console.error("Error saving tool:", error);
+      }
+    });
   };
 
   const resetForm = () => {
@@ -194,15 +160,27 @@ export default function AIRegisterPage() {
   };
 
   const handleDelete = (id: string) => {
-    setTools(tools.filter((tool) => tool.id !== id));
+    startTransition(async () => {
+      try {
+        await deleteTool(id);
+        const updated = await getTools();
+        setTools(updated);
+      } catch (error) {
+        console.error("Error deleting tool:", error);
+      }
+    });
   };
 
-  const toggleCompliance = (id: string) => {
-    setTools(
-      tools.map((tool) =>
-        tool.id === id ? { ...tool, isCompliant: !tool.isCompliant } : tool
-      )
-    );
+  const handleToggleCompliance = (id: string) => {
+    startTransition(async () => {
+      try {
+        await toggleCompliance(id);
+        const updated = await getTools();
+        setTools(updated);
+      } catch (error) {
+        console.error("Error toggling compliance:", error);
+      }
+    });
   };
 
   return (
@@ -334,7 +312,9 @@ export default function AIRegisterPage() {
                   <Button variant="outline" onClick={resetForm}>
                     Annuleren
                   </Button>
-                  <Button onClick={handleSubmit}>Tool Opslaan</Button>
+                  <Button onClick={handleSubmit} disabled={isPending}>
+                    {isPending ? "Bezig..." : "Tool Opslaan"}
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -415,7 +395,10 @@ export default function AIRegisterPage() {
                       <div className="flex items-center gap-2">
                         <Switch
                           checked={tool.isCompliant}
-                          onCheckedChange={() => toggleCompliance(tool.id)}
+                          onCheckedChange={() =>
+                            handleToggleCompliance(tool.id)
+                          }
+                          disabled={isPending}
                         />
                         {tool.isCompliant ? (
                           <span className="flex items-center gap-1 text-sm text-emerald-600">
@@ -436,6 +419,7 @@ export default function AIRegisterPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEdit(tool)}
+                          disabled={isPending}
                         >
                           <Pencil className="h-4 w-4 text-muted-foreground" />
                         </Button>
@@ -443,6 +427,7 @@ export default function AIRegisterPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(tool.id)}
+                          disabled={isPending}
                         >
                           <Trash2 className="h-4 w-4 text-muted-foreground" />
                         </Button>
@@ -456,7 +441,7 @@ export default function AIRegisterPage() {
                       colSpan={6}
                       className="py-8 text-center text-muted-foreground"
                     >
-                      Geen tools gevonden
+                      {toolsLoaded ? "Geen tools gevonden" : "Tools laden..."}
                     </TableCell>
                   </TableRow>
                 )}
