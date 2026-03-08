@@ -2,44 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { AiTool } from "@/lib/db";
 
-const tools = [
-  {
-    name: "ChatGPT Enterprise",
-    department: "Marketing",
-    riskLevel: "Beperkt risico",
-    status: "compliant",
-    lastAudit: "15 jan 2026",
-  },
-  {
-    name: "Microsoft Copilot",
-    department: "Alle afdelingen",
-    riskLevel: "Beperkt risico",
-    status: "compliant",
-    lastAudit: "20 jan 2026",
-  },
-  {
-    name: "Jasper AI",
-    department: "Content",
-    riskLevel: "Beperkt risico",
-    status: "pending",
-    lastAudit: "In behandeling",
-  },
-  {
-    name: "Notion AI",
-    department: "Product",
-    riskLevel: "Minimaal risico",
-    status: "compliant",
-    lastAudit: "10 jan 2026",
-  },
-  {
-    name: "Midjourney",
-    department: "Design",
-    riskLevel: "Beperkt risico",
-    status: "action",
-    lastAudit: "Actie vereist",
-  },
-];
+const riskLevelConfig: Record<string, string> = {
+  minimaal: "Minimaal risico",
+  beperkt: "Beperkt risico",
+  hoog: "Hoog risico",
+  onaanvaardbaar: "Onaanvaardbaar",
+};
 
 const statusConfig = {
   compliant: {
@@ -59,7 +29,15 @@ const statusConfig = {
   },
 };
 
-export function ToolsTable() {
+export function ToolsTable({ tools }: { tools: AiTool[] }) {
+  const toolsDisplay = tools.slice(0, 5).map((tool) => ({
+    name: tool.name,
+    department: tool.department,
+    riskLevel: riskLevelConfig[tool.risk] || tool.risk,
+    status: tool.is_compliant ? "compliant" : "action",
+    lastAudit: new Date(tool.date_added).toLocaleDateString("nl-NL"),
+  }));
+
   return (
     <Card className="border-border lg:col-span-2">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
@@ -80,11 +58,11 @@ export function ToolsTable() {
                 <th className="pb-3">Afdeling</th>
                 <th className="pb-3">Risiconiveau</th>
                 <th className="pb-3">Status</th>
-                <th className="pb-3">Laatste audit</th>
+                <th className="pb-3">Datum toegevoegd</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {tools.map((tool) => {
+              {toolsDisplay.map((tool) => {
                 const status = statusConfig[tool.status as keyof typeof statusConfig];
                 return (
                   <tr key={tool.name} className="text-sm">
