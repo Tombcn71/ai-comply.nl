@@ -31,7 +31,7 @@ export function DashboardSidebar() {
         className="flex h-16 items-center gap-2 border-b border-border px-6 transition-opacity hover:opacity-80"
       >
         <Shield className="h-7 w-7 text-primary" />
-        <span className="text-lg font-bold text-foreground">AI Dossier.nl</span>
+        <span className="text-lg font-bold text-foreground">AI-Comply.nl</span>
       </Link>
 
       <nav className="flex flex-col gap-1 p-4">
