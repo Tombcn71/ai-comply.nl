@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AiTool {
+  id           String   @id @default(cuid())
+  name         String
+  department   String
+  risk         String
+  purpose      String
+  isCompliant  Boolean  @default(false)
+  dateAdded    DateTime @default(now())
+}
