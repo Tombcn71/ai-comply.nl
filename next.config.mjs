@@ -14,6 +14,9 @@ const nextConfig = {
     turbopack: {
       resolveAlias: {},
     },
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
   },
 }
 
