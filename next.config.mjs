@@ -11,9 +11,6 @@ const nextConfig = {
     pagesBufferLength: 5,
   },
   experimental: {
-    turbopack: {
-      resolveAlias: {},
-    },
     serverActions: {
       bodySizeLimit: '10mb',
     },
