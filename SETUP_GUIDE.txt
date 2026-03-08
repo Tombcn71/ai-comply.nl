@@ -1,0 +1,60 @@
+// QUICK REFERENCE - File Structure
+
+📁 PROJECT ROOT
+├── 📄 prisma/schema.prisma ← Database model definition
+├── 📄 lib/db.ts ← Prisma client singleton
+├── 📁 app/
+│   ├── 📁 actions/
+│   │   └── 📄 tools.ts ← All server actions (getTools, createTool, updateTool, deleteTool, toggleCompliance)
+│   └── 📁 dashboard/
+│       ├── 📄 page.tsx ← Main dashboard (with Suspense wrapper)
+│       ├── 📁 register/
+│       │   └── 📄 page.tsx ← AI-Register page (client component with server actions)
+│       └── 📁 components/
+│           └── 📄 tools-table.tsx ← Async component that fetches from DB
+├── 📄 package.json ← Updated with @prisma/client & prisma
+└── 📄 PRISMA_INTEGRATION.md ← This documentation
+
+═══════════════════════════════════════════════════════════
+
+KEY CHANGES SUMMARY:
+
+1. ✅ No hardcoded initialTools array anymore
+2. ✅ All data flows from database via Prisma
+3. ✅ Server Actions handle all mutations (create, update, delete, toggle)
+4. ✅ Pages revalidate automatically after changes
+5. ✅ UI/Design completely unchanged (Shadcn + Tailwind preserved)
+6. ✅ Type-safe with full TypeScript support
+7. ✅ Async components in dashboard with Suspense fallback
+
+═══════════════════════════════════════════════════════════
+
+BEFORE vs AFTER:
+
+BEFORE (Client-only):
+  - useState with initialTools
+  - Client-side state mutations
+  - No database persistence
+  - No real-time sync
+
+AFTER (Prisma + Server Actions):
+  - Database-driven (Postgres via Prisma)
+  - Server Actions handle all operations
+  - Automatic revalidation on changes
+  - Real-time sync across users
+
+═══════════════════════════════════════════════════════════
+
+DATABASE SCHEMA (Generated via Prisma):
+
+AiTool {
+  id: String (cuid) - Primary key
+  name: String - Tool name
+  department: String - Marketing | HR | IT | Sales
+  risk: String - minimaal | beperkt | hoog | onaanvaardbaar
+  purpose: Text - Description of use
+  isCompliant: Boolean - Default: false
+  dateAdded: DateTime - Default: now()
+}
+
+═══════════════════════════════════════════════════════════

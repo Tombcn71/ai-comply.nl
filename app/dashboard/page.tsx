@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { ToolsTable } from "@/components/dashboard/tools-table";
 import { TrainingChart } from "@/components/dashboard/training-chart";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function DashboardPage() {
   return (
@@ -24,7 +26,17 @@ export default function DashboardPage() {
           <KpiCards />
 
           <div className="mt-6 grid gap-6 lg:grid-cols-3">
-            <ToolsTable />
+            <Suspense
+              fallback={
+                <Card className="border-border lg:col-span-2">
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    Tools laden...
+                  </CardContent>
+                </Card>
+              }
+            >
+              <ToolsTable />
+            </Suspense>
             <TrainingChart />
           </div>
         </main>

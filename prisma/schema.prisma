@@ -1,0 +1,23 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AiTool {
+  id         String   @id @default(cuid())
+  name       String
+  department String   // "Marketing" | "HR" | "IT" | "Sales"
+  risk       String   // "minimaal" | "beperkt" | "hoog" | "onaanvaardbaar"
+  purpose    String   @db.Text
+  isCompliant Boolean  @default(false)
+  dateAdded  DateTime @default(now())
+
+  @@map("ai_tools")
+}
