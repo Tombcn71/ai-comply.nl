@@ -22,7 +22,10 @@ import {
   Clock,
   Building2,
   Award,
+  AlertCircle,
 } from "lucide-react";
+import { getDossierDataAction } from "@/app/actions/dossier";
+import { generateDossierPDF, downloadPDF } from "@/lib/pdf-generator";
 
 const checklistItems = [
   {
@@ -78,30 +81,84 @@ const recentDossiers = [
   },
 ];
 
+const GENERATION_STEPS = [
+  "Gegevens verzamelen uit AI-Register...",
+  "Training certificaten ophalen...",
+  "Afdelingsrapportages genereren...",
+  "PDF samenstellen...",
+  "Document finaliseren...",
+];
+
 export default function DossierPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState("");
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleGenerate = () => {
-    setIsGenerating(true);
-    setGenerationStep("Gegevens verzamelen uit AI-Register...");
+  const handleGenerate = async () => {
+    try {
+      setIsGenerating(true);
+      setError(null);
+      setCurrentStepIndex(0);
 
-    setTimeout(() => {
-      setGenerationStep("Training certificaten ophalen...");
-    }, 1500);
+      // Step 0: Fetch data
+      setGenerationStep(GENERATION_STEPS[0]);
+      console.log("[PDF] Starting dossier generation...");
+      
+      const dossierData = await getDossierDataAction();
+      console.log("[PDF] Data fetched, generating PDF...");
 
-    setTimeout(() => {
-      setGenerationStep("Afdelingsrapportages genereren...");
-    }, 3000);
+      // Step 1: Certificates
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setCurrentStepIndex(1);
+      setGenerationStep(GENERATION_STEPS[1]);
 
-    setTimeout(() => {
-      setGenerationStep("PDF samenstellen...");
-    }, 4500);
+      // Step 2: Reports
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setCurrentStepIndex(2);
+      setGenerationStep(GENERATION_STEPS[2]);
 
-    setTimeout(() => {
+      // Step 3: Assemble PDF
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setCurrentStepIndex(3);
+      setGenerationStep(GENERATION_STEPS[3]);
+
+      // Generate the PDF
+      const pdfBlob = generateDossierPDF(dossierData);
+      console.log("[PDF] PDF generated successfully, size:", pdfBlob.size, "bytes");
+
+      // Step 4: Finalize
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      setCurrentStepIndex(4);
+      setGenerationStep(GENERATION_STEPS[4]);
+
+      // Generate filename with date
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("nl-NL", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const filename = `Compliance_Dossier_${dateStr.replace(/\//g, "-")}.pdf`;
+
+      // Small delay before download for UX
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Download the PDF
+      downloadPDF(pdfBlob, filename);
+      console.log("[PDF] Download initiated:", filename);
+
       setIsGenerating(false);
       setGenerationStep("");
-    }, 6000);
+      setCurrentStepIndex(0);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Er is een fout opgetreden";
+      console.error("[PDF] Error during generation:", err);
+      setError(errorMessage);
+      setIsGenerating(false);
+      setGenerationStep("");
+      setCurrentStepIndex(0);
+    }
   };
 
   return (
@@ -140,6 +197,17 @@ export default function DossierPage() {
             </CardHeader>
 
             <CardContent className="space-y-6">
+              {/* Error Alert */}
+              {error && (
+                <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <div>
+                    <p className="font-medium text-red-900">Fout bij generatie</p>
+                    <p className="text-sm text-red-800">{error}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Generator Button */}
               <div className="flex flex-col items-center justify-center rounded-xl bg-muted/50 p-8">
                 <Button
@@ -162,12 +230,27 @@ export default function DossierPage() {
                 </Button>
 
                 {isGenerating && (
-                  <p className="mt-4 animate-pulse text-sm text-muted-foreground">
-                    {generationStep}
-                  </p>
+                  <div className="mt-4 w-full max-w-md space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">
+                        {generationStep}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        {currentStepIndex + 1}/{GENERATION_STEPS.length}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full bg-primary transition-all duration-500"
+                        style={{
+                          width: `${((currentStepIndex + 1) / GENERATION_STEPS.length) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
                 )}
 
-                {!isGenerating && (
+                {!isGenerating && !error && (
                   <p className="mt-4 text-sm text-muted-foreground">
                     Eén klik voor een compleet dossier met alle bewijslast
                   </p>
