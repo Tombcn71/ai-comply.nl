@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import {
   getAllTools,
   getToolById,
@@ -54,7 +55,9 @@ export async function createToolAction(data: {
       throw new Error('Missing required fields');
     }
 
-    return await createTool(data.name, data.department, data.risk, data.purpose);
+    const result = await createTool(data.name, data.department, data.risk, data.purpose);
+    revalidatePath('/dashboard/register');
+    return result;
   } catch (error) {
     console.error('[Server Action] Error creating tool:', error);
     throw error;
@@ -75,7 +78,7 @@ export async function updateToolAction(
   }>
 ): Promise<AiTool | null> {
   try {
-    return await updateTool(
+    const result = await updateTool(
       id,
       data.name,
       data.department,
@@ -83,6 +86,8 @@ export async function updateToolAction(
       data.purpose,
       data.is_compliant
     );
+    revalidatePath('/dashboard/register');
+    return result;
   } catch (error) {
     console.error('[Server Action] Error updating tool:', error);
     throw error;
@@ -94,7 +99,9 @@ export async function updateToolAction(
  */
 export async function deleteToolAction(id: string): Promise<boolean> {
   try {
-    return await deleteTool(id);
+    const result = await deleteTool(id);
+    revalidatePath('/dashboard/register');
+    return result;
   } catch (error) {
     console.error('[Server Action] Error deleting tool:', error);
     throw error;
@@ -106,7 +113,9 @@ export async function deleteToolAction(id: string): Promise<boolean> {
  */
 export async function toggleComplianceAction(id: string): Promise<AiTool | null> {
   try {
-    return await toggleCompliance(id);
+    const result = await toggleCompliance(id);
+    revalidatePath('/dashboard/register');
+    return result;
   } catch (error) {
     console.error('[Server Action] Error toggling compliance:', error);
     throw error;
@@ -152,7 +161,9 @@ export async function createEmployeeAction(data: {
       throw new Error('Missing required fields');
     }
 
-    return await createEmployee(data.name, data.department, data.status || 'pending');
+    const result = await createEmployee(data.name, data.department, data.status || 'pending');
+    revalidatePath('/dashboard/training');
+    return result;
   } catch (error) {
     console.error('[Server Action] Error creating employee:', error);
     throw error;
@@ -171,7 +182,9 @@ export async function certifyEmployeeAction(
       throw new Error('Missing required fields');
     }
 
-    return await updateEmployeeCertification(id, certificateUrl);
+    const result = await updateEmployeeCertification(id, certificateUrl);
+    revalidatePath('/dashboard/training');
+    return result;
   } catch (error) {
     console.error('[Server Action] Error certifying employee:', error);
     throw error;
