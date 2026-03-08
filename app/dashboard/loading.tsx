@@ -1,5 +1,4 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card } from "@/components/ui/card";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
 
@@ -54,7 +53,7 @@ export default function DashboardLoading() {
                   </div>
                 ))}
               </div>
-            </Card>
+            </div>
 
             {/* Charts Skeleton */}
             <div className="flex flex-col gap-6">
