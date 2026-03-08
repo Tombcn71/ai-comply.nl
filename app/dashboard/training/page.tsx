@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,119 +24,53 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AlertTriangle, FileText, Upload, Users, TrendingUp } from "lucide-react";
+import {
+  getEmployeesAction,
+  getCertificationStatsAction,
+  certifyEmployeeAction,
+} from "@/app/actions/tools";
 
 interface Employee {
-  id: number;
+  id: string;
   name: string;
   department: string;
-  status: "certified" | "not_trained";
-  certificate: string | null;
-  certifiedDate: string | null;
+  status: string;
+  certificate_url?: string;
+  certified_date?: string;
 }
 
-const initialEmployees: Employee[] = [
-  {
-    id: 1,
-    name: "Jan de Vries",
-    department: "Marketing",
-    status: "certified",
-    certificate: "cert_jan_devries.pdf",
-    certifiedDate: "2025-11-15",
-  },
-  {
-    id: 2,
-    name: "Lisa Bakker",
-    department: "Marketing",
-    status: "certified",
-    certificate: "cert_lisa_bakker.pdf",
-    certifiedDate: "2025-10-22",
-  },
-  {
-    id: 3,
-    name: "Pieter Jansen",
-    department: "Sales",
-    status: "not_trained",
-    certificate: null,
-    certifiedDate: null,
-  },
-  {
-    id: 4,
-    name: "Emma Visser",
-    department: "Sales",
-    status: "certified",
-    certificate: "cert_emma_visser.pdf",
-    certifiedDate: "2025-12-01",
-  },
-  {
-    id: 5,
-    name: "Thomas Mulder",
-    department: "IT",
-    status: "certified",
-    certificate: "cert_thomas_mulder.pdf",
-    certifiedDate: "2025-09-10",
-  },
-  {
-    id: 6,
-    name: "Sophie van Dijk",
-    department: "HR",
-    status: "not_trained",
-    certificate: null,
-    certifiedDate: null,
-  },
-  {
-    id: 7,
-    name: "Mark Hendriks",
-    department: "Sales",
-    status: "not_trained",
-    certificate: null,
-    certifiedDate: null,
-  },
-  {
-    id: 8,
-    name: "Anna de Boer",
-    department: "Finance",
-    status: "certified",
-    certificate: "cert_anna_deboer.pdf",
-    certifiedDate: "2025-11-28",
-  },
-  {
-    id: 9,
-    name: "Sander Smit",
-    department: "Operations",
-    status: "not_trained",
-    certificate: null,
-    certifiedDate: null,
-  },
-  {
-    id: 10,
-    name: "Eva Meijer",
-    department: "Marketing",
-    status: "certified",
-    certificate: "cert_eva_meijer.pdf",
-    certifiedDate: "2025-10-05",
-  },
-];
-
 export default function TrainingPage() {
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState({ total: 0, certified: 0, percentage: 0 });
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [certDate, setCertDate] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const certifiedCount = employees.filter((e) => e.status === "certified").length;
-  const totalCount = employees.length;
-  const overallPercentage = Math.round((certifiedCount / totalCount) * 100);
+  // Load data on mount
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const marketingEmployees = employees.filter((e) => e.department === "Marketing");
-  const marketingCertified = marketingEmployees.filter((e) => e.status === "certified").length;
-  const marketingPercentage = Math.round((marketingCertified / marketingEmployees.length) * 100);
-
-  const salesEmployees = employees.filter((e) => e.department === "Sales");
-  const salesCertified = salesEmployees.filter((e) => e.status === "certified").length;
-  const salesPercentage = Math.round((salesCertified / salesEmployees.length) * 100);
-
-  const missingCertificates = employees.filter((e) => e.status === "not_trained").length;
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [empData, statsData] = await Promise.all([
+        getEmployeesAction(),
+        getCertificationStatsAction(),
+      ]);
+      setEmployees(empData);
+      setStats(statsData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
+      console.error("Error loading data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUploadClick = (employee: Employee) => {
     setSelectedEmployee(employee);
@@ -145,26 +79,41 @@ export default function TrainingPage() {
     setIsUploadOpen(true);
   };
 
-  const handleUploadSubmit = () => {
-    if (selectedEmployee && certDate) {
-      setEmployees((prev) =>
-        prev.map((emp) =>
-          emp.id === selectedEmployee.id
-            ? {
-                ...emp,
-                status: "certified" as const,
-                certificate: `cert_${emp.name.toLowerCase().replace(" ", "_")}.pdf`,
-                certifiedDate: certDate,
-              }
-            : emp
-        )
-      );
+  const handleUploadSubmit = async () => {
+    if (!selectedEmployee || !certDate) return;
+
+    try {
+      // In a real app, you'd upload the file to cloud storage and get a URL
+      // For now, we're just storing the date
+      const certificateUrl = selectedFile?.name || `cert_${selectedEmployee.name}`;
+      await certifyEmployeeAction(selectedEmployee.id, certificateUrl);
+      await loadData();
       setIsUploadOpen(false);
       setSelectedEmployee(null);
       setCertDate("");
       setSelectedFile(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save certification");
     }
   };
+
+  const missingCertificates = employees.filter((e) => e.status !== "certified").length;
+
+  // Calculate department-specific stats
+  const departmentStats = employees.reduce(
+    (acc, emp) => {
+      const dept = emp.department;
+      if (!acc[dept]) {
+        acc[dept] = { total: 0, certified: 0 };
+      }
+      acc[dept].total++;
+      if (emp.status === "certified") {
+        acc[dept].certified++;
+      }
+      return acc;
+    },
+    {} as Record<string, { total: number; certified: number }>
+  );
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -181,6 +130,12 @@ export default function TrainingPage() {
             </p>
           </div>
 
+          {error && (
+            <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
+              {error}
+            </div>
+          )}
+
           {/* KPI Cards */}
           <div className="mb-6 grid gap-4 md:grid-cols-3">
             <Card className="border-border bg-card">
@@ -188,9 +143,9 @@ export default function TrainingPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Totaal AI-Geletterd</p>
-                    <p className="mt-1 text-3xl font-bold text-foreground">{overallPercentage}%</p>
+                    <p className="mt-1 text-3xl font-bold text-foreground">{stats.percentage}%</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {certifiedCount} van {totalCount} medewerkers
+                      {stats.certified} van {stats.total} medewerkers
                     </p>
                   </div>
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -200,57 +155,49 @@ export default function TrainingPage() {
                 <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${overallPercentage}%` }}
+                    style={{ width: `${stats.percentage}%` }}
                   />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-border bg-card">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Marketing</p>
-                    <p className="mt-1 text-3xl font-bold text-green-600">{marketingPercentage}%</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {marketingCertified} van {marketingEmployees.length} medewerkers
-                    </p>
-                  </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                    <TrendingUp className="h-6 w-6 text-green-600" />
-                  </div>
-                </div>
-                <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-green-500 transition-all"
-                    style={{ width: `${marketingPercentage}%` }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            {Object.entries(departmentStats).slice(0, 2).map(([dept, data]) => {
+              const percentage = data.total > 0 ? Math.round((data.certified / data.total) * 100) : 0;
+              const colors = {
+                Marketing: { bg: "bg-green-100", text: "text-green-600", bar: "bg-green-500" },
+                Sales: { bg: "bg-orange-100", text: "text-orange-600", bar: "bg-orange-500" },
+              };
+              const color = colors[dept as keyof typeof colors] || {
+                bg: "bg-blue-100",
+                text: "text-blue-600",
+                bar: "bg-blue-500",
+              };
 
-            <Card className="border-border bg-card">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Sales</p>
-                    <p className="mt-1 text-3xl font-bold text-orange-500">{salesPercentage}%</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {salesCertified} van {salesEmployees.length} medewerkers
-                    </p>
-                  </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
-                    <AlertTriangle className="h-6 w-6 text-orange-500" />
-                  </div>
-                </div>
-                <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-orange-500 transition-all"
-                    style={{ width: `${salesPercentage}%` }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+              return (
+                <Card key={dept} className="border-border bg-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">{dept}</p>
+                        <p className={`mt-1 text-3xl font-bold ${color.text}`}>{percentage}%</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {data.certified} van {data.total} medewerkers
+                        </p>
+                      </div>
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-full ${color.bg}`}>
+                        <TrendingUp className={`h-6 w-6 ${color.text}`} />
+                      </div>
+                    </div>
+                    <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={`h-full rounded-full ${color.bar} transition-all`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {/* Action Banner */}
@@ -258,8 +205,9 @@ export default function TrainingPage() {
             <div className="mb-6 flex items-center gap-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3">
               <AlertTriangle className="h-5 w-5 flex-shrink-0 text-orange-500" />
               <p className="text-sm text-orange-800">
-                Er missen nog certificaten voor <span className="font-semibold">{missingCertificates} medewerkers</span> om
-                volledig aan de AI Act te voldoen.
+                Er missen nog certificaten voor{" "}
+                <span className="font-semibold">{missingCertificates} medewerkers</span> om volledig
+                aan de AI Act te voldoen.
               </p>
             </div>
           )}
@@ -278,44 +226,58 @@ export default function TrainingPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {employees.map((employee) => (
-                    <TableRow key={employee.id} className="border-border">
-                      <TableCell className="font-medium text-foreground">{employee.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{employee.department}</TableCell>
-                      <TableCell>
-                        {employee.status === "certified" ? (
-                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                            Gecertificeerd
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-muted text-muted-foreground">
-                            Niet getraind
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {employee.certificate ? (
-                          <div className="flex items-center gap-2 text-primary">
-                            <FileText className="h-4 w-4" />
-                            <span className="text-sm">PDF</span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUploadClick(employee)}
-                          className="gap-2"
-                        >
-                          <Upload className="h-4 w-4" />
-                          Certificaat Uploaden
-                        </Button>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-8 text-center">
+                        Laden...
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : employees.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                        Geen medewerkers gevonden
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    employees.map((employee) => (
+                      <TableRow key={employee.id} className="border-border">
+                        <TableCell className="font-medium text-foreground">{employee.name}</TableCell>
+                        <TableCell className="text-muted-foreground">{employee.department}</TableCell>
+                        <TableCell>
+                          {employee.status === "certified" ? (
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                              Gecertificeerd
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                              Niet getraind
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {employee.certificate_url ? (
+                            <div className="flex items-center gap-2 text-primary">
+                              <FileText className="h-4 w-4" />
+                              <span className="text-sm">PDF</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUploadClick(employee)}
+                            className="gap-2"
+                          >
+                            <Upload className="h-4 w-4" />
+                            Certificaat
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
