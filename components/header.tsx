@@ -16,14 +16,20 @@ export function Header() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
             <Shield className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="text-lg font-bold text-foreground">AI Dossier.nl</span>
+          <span className="text-lg font-bold text-foreground">
+            AI-comply.nl
+          </span>
         </div>
 
         <nav className="flex items-center gap-6">
           <Link
+            href="/uw-data"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+            Uw data
+          </Link>{" "}
+          <Link
             href="/dashboard"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             Dashboard
           </Link>
           <Button onClick={scrollToTop} size="sm">
