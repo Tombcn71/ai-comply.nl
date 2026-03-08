@@ -216,28 +216,52 @@ export async function uploadCertificateAction(
   formData: FormData
 ): Promise<Employee | null> {
   try {
+    console.log("[uploadCertificateAction] Starting upload for employee:", employeeId);
+    
     const file = formData.get('certificate') as File;
     
     if (!file) {
+      console.error("[uploadCertificateAction] No file found in formData");
       throw new Error('No file provided');
     }
 
     if (!employeeId) {
+      console.error("[uploadCertificateAction] No employee ID provided");
       throw new Error('Employee ID is required');
     }
 
-    console.log('[Server Action] Uploading certificate for employee:', employeeId);
+    console.log("[uploadCertificateAction] File details:", {
+      fileName: file.name,
+      size: file.size,
+      type: file.type,
+    });
 
     // Upload to Cellar S3
+    console.log("[uploadCertificateAction] Calling uploadCertificateToCellar...");
     const certificateUrl = await uploadCertificateToCellar(file, employeeId);
 
+    console.log("[uploadCertificateAction] Upload successful, URL:", certificateUrl);
+
     // Update employee in database
+    console.log("[uploadCertificateAction] Updating employee in database...");
     const result = await updateEmployeeCertification(employeeId, certificateUrl);
     
+    console.log("[uploadCertificateAction] Database update successful", {
+      employeeId,
+      status: result?.status,
+      certificateUrl: result?.certificate_url,
+    });
+
     revalidatePath('/dashboard/training');
+    
+    console.log("[uploadCertificateAction] COMPLETE - Employee certified successfully");
     return result;
   } catch (error) {
-    console.error('[Server Action] Error uploading certificate:', error);
+    console.error("[uploadCertificateAction] ERROR", {
+      employeeId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     throw error;
   }
 }
