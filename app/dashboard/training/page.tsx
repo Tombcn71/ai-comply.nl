@@ -14,7 +14,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -23,11 +31,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertTriangle, FileText, Upload, Users, TrendingUp } from "lucide-react";
+import { AlertTriangle, FileText, Upload, Users, TrendingUp, Plus } from "lucide-react";
 import {
   getEmployeesAction,
   getCertificationStatsAction,
   certifyEmployeeAction,
+  createEmployeeAction,
 } from "@/app/actions/tools";
 
 interface Employee {
@@ -39,15 +48,24 @@ interface Employee {
   certified_date?: string;
 }
 
+type Department = "Marketing" | "HR" | "IT" | "Sales";
+
 export default function TrainingPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({ total: 0, certified: 0, percentage: 0 });
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [certDate, setCertDate] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Form state for adding new employee
+  const [newEmployeeForm, setNewEmployeeForm] = useState({
+    name: "",
+    department: "" as Department | "",
+  });
 
   // Load data on mount
   useEffect(() => {
@@ -83,8 +101,6 @@ export default function TrainingPage() {
     if (!selectedEmployee || !certDate) return;
 
     try {
-      // In a real app, you'd upload the file to cloud storage and get a URL
-      // For now, we're just storing the date
       const certificateUrl = selectedFile?.name || `cert_${selectedEmployee.name}`;
       await certifyEmployeeAction(selectedEmployee.id, certificateUrl);
       await loadData();
@@ -94,6 +110,27 @@ export default function TrainingPage() {
       setSelectedFile(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save certification");
+    }
+  };
+
+  const handleAddEmployee = async () => {
+    if (!newEmployeeForm.name || !newEmployeeForm.department) {
+      setError("Vul alle velden in");
+      return;
+    }
+
+    try {
+      await createEmployeeAction({
+        name: newEmployeeForm.name,
+        department: newEmployeeForm.department,
+        status: "pending",
+      });
+      await loadData();
+      setIsAddEmployeeOpen(false);
+      setNewEmployeeForm({ name: "", department: "" });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add employee");
     }
   };
 
@@ -123,11 +160,71 @@ export default function TrainingPage() {
         <DashboardHeader />
 
         <main className="p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">AI-Geletterdheid Training</h1>
-            <p className="text-muted-foreground">
-              Beheer en monitor de AI-geletterdheid van je team conform Artikel 4 van de AI Act
-            </p>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">AI-Geletterdheid Training</h1>
+              <p className="text-muted-foreground">
+                Beheer en monitor de AI-geletterdheid van je team conform Artikel 4 van de AI Act
+              </p>
+            </div>
+
+            <Dialog open={isAddEmployeeOpen} onOpenChange={setIsAddEmployeeOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Medewerker Toevoegen
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Nieuwe Medewerker Toevoegen</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="emp-name">Naam</Label>
+                    <Input
+                      id="emp-name"
+                      placeholder="Volledige naam"
+                      value={newEmployeeForm.name}
+                      onChange={(e) =>
+                        setNewEmployeeForm({ ...newEmployeeForm, name: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="emp-dept">Afdeling</Label>
+                    <Select
+                      value={newEmployeeForm.department}
+                      onValueChange={(value: Department) =>
+                        setNewEmployeeForm({ ...newEmployeeForm, department: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecteer afdeling" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Marketing">Marketing</SelectItem>
+                        <SelectItem value="HR">HR</SelectItem>
+                        <SelectItem value="IT">IT</SelectItem>
+                        <SelectItem value="Sales">Sales</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsAddEmployeeOpen(false);
+                      setNewEmployeeForm({ name: "", department: "" });
+                    }}
+                  >
+                    Annuleren
+                  </Button>
+                  <Button onClick={handleAddEmployee}>Toevoegen</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {error && (
