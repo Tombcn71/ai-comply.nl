@@ -20,6 +20,15 @@ export interface AiTool {
   date_added: Date;
 }
 
+export interface Employee {
+  id: string;
+  name: string;
+  department: string;
+  status: string;
+  certificate_url?: string;
+  certified_date?: Date;
+}
+
 /**
  * Get all AI tools from database
  */
@@ -158,6 +167,107 @@ export async function toggleCompliance(id: string): Promise<AiTool | null> {
   } catch (error) {
     console.error('Error toggling compliance:', error);
     throw new Error('Failed to toggle compliance status');
+  }
+}
+
+/**
+ * Get all employees
+ */
+export async function getAllEmployees(): Promise<Employee[]> {
+  try {
+    const result: QueryResult<Employee> = await pool.query(
+      'SELECT id, name, department, status, certificate_url, certified_date FROM employees ORDER BY name ASC'
+    );
+    return result.rows;
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    throw new Error('Failed to fetch employees');
+  }
+}
+
+/**
+ * Get employee by ID
+ */
+export async function getEmployeeById(id: string): Promise<Employee | null> {
+  try {
+    const result: QueryResult<Employee> = await pool.query(
+      'SELECT id, name, department, status, certificate_url, certified_date FROM employees WHERE id = $1',
+      [id]
+    );
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('Error fetching employee:', error);
+    throw new Error('Failed to fetch employee');
+  }
+}
+
+/**
+ * Create a new employee
+ */
+export async function createEmployee(
+  name: string,
+  department: string,
+  status: string
+): Promise<Employee> {
+  try {
+    const id = crypto.randomUUID();
+    const result: QueryResult<Employee> = await pool.query(
+      `INSERT INTO employees (id, name, department, status)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, name, department, status, certificate_url, certified_date`,
+      [id, name, department, status]
+    );
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error creating employee:', error);
+    throw new Error('Failed to create employee');
+  }
+}
+
+/**
+ * Update employee certification
+ */
+export async function updateEmployeeCertification(
+  id: string,
+  certificateUrl: string
+): Promise<Employee | null> {
+  try {
+    const result: QueryResult<Employee> = await pool.query(
+      `UPDATE employees 
+       SET status = $1, certificate_url = $2, certified_date = NOW()
+       WHERE id = $3
+       RETURNING id, name, department, status, certificate_url, certified_date`,
+      ['certified', certificateUrl, id]
+    );
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('Error updating employee certification:', error);
+    throw new Error('Failed to update employee certification');
+  }
+}
+
+/**
+ * Get certification statistics
+ */
+export async function getCertificationStats(): Promise<{
+  total: number;
+  certified: number;
+  percentage: number;
+}> {
+  try {
+    const result = await pool.query(
+      'SELECT COUNT(*) as total, SUM(CASE WHEN status = $1 THEN 1 ELSE 0 END) as certified FROM employees',
+      ['certified']
+    );
+    const row = result.rows[0];
+    const total = parseInt(row.total) || 0;
+    const certified = parseInt(row.certified) || 0;
+    const percentage = total > 0 ? Math.round((certified / total) * 100) : 0;
+    
+    return { total, certified, percentage };
+  } catch (error) {
+    console.error('Error fetching certification stats:', error);
+    throw new Error('Failed to fetch certification stats');
   }
 }
 

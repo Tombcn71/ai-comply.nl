@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -46,6 +46,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
+import {
+  createToolAction,
+  updateToolAction,
+  deleteToolAction,
+  toggleComplianceAction,
+  getToolsAction,
+} from "@/app/actions/tools";
 
 type RiskCategory = "minimaal" | "beperkt" | "hoog" | "onaanvaardbaar";
 type Department = "Marketing" | "HR" | "IT" | "Sales";
@@ -55,9 +62,9 @@ interface Tool {
   name: string;
   department: Department;
   risk: RiskCategory;
-  dateAdded: string;
+  date_added: string;
   purpose: string;
-  isCompliant: boolean;
+  is_compliant: boolean;
 }
 
 const riskConfig: Record<
@@ -82,47 +89,10 @@ const riskConfig: Record<
   },
 };
 
-const initialTools: Tool[] = [
-  {
-    id: "1",
-    name: "ChatGPT",
-    department: "Marketing",
-    risk: "beperkt",
-    dateAdded: "2024-01-15",
-    purpose: "Content creatie en klantenservice chatbot",
-    isCompliant: true,
-  },
-  {
-    id: "2",
-    name: "Midjourney",
-    department: "Marketing",
-    risk: "minimaal",
-    dateAdded: "2024-02-20",
-    purpose: "Visuele content generatie voor campagnes",
-    isCompliant: true,
-  },
-  {
-    id: "3",
-    name: "Jasper",
-    department: "Sales",
-    risk: "minimaal",
-    dateAdded: "2024-03-10",
-    purpose: "Verkoopteksten en e-mail automatisering",
-    isCompliant: false,
-  },
-  {
-    id: "4",
-    name: "Recruiting-bot",
-    department: "HR",
-    risk: "hoog",
-    dateAdded: "2024-04-05",
-    purpose: "Automatische CV-screening en kandidaat matching",
-    isCompliant: false,
-  },
-];
-
 export default function AIRegisterPage() {
-  const [tools, setTools] = useState<Tool[]>(initialTools);
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [riskFilter, setRiskFilter] = useState<RiskCategory | "all">("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -135,6 +105,25 @@ export default function AIRegisterPage() {
     purpose: "",
   });
 
+  // Load tools on mount
+  useEffect(() => {
+    loadTools();
+  }, []);
+
+  const loadTools = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getToolsAction();
+      setTools(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load tools");
+      console.error("Error loading tools:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredTools = tools.filter((tool) => {
     const matchesSearch = tool.name
       .toLowerCase()
@@ -143,37 +132,30 @@ export default function AIRegisterPage() {
     return matchesSearch && matchesRisk;
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name || !formData.department || !formData.risk) return;
 
-    if (editingTool) {
-      setTools(
-        tools.map((tool) =>
-          tool.id === editingTool.id
-            ? {
-                ...tool,
-                name: formData.name,
-                department: formData.department as Department,
-                risk: formData.risk as RiskCategory,
-                purpose: formData.purpose,
-              }
-            : tool
-        )
-      );
-    } else {
-      const newTool: Tool = {
-        id: Date.now().toString(),
-        name: formData.name,
-        department: formData.department as Department,
-        risk: formData.risk as RiskCategory,
-        dateAdded: new Date().toISOString().split("T")[0],
-        purpose: formData.purpose,
-        isCompliant: false,
-      };
-      setTools([...tools, newTool]);
+    try {
+      if (editingTool) {
+        await updateToolAction(editingTool.id, {
+          name: formData.name,
+          department: formData.department as string,
+          risk: formData.risk as string,
+          purpose: formData.purpose,
+        });
+      } else {
+        await createToolAction({
+          name: formData.name,
+          department: formData.department as string,
+          risk: formData.risk as string,
+          purpose: formData.purpose,
+        });
+      }
+      await loadTools();
+      resetForm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save tool");
     }
-
-    resetForm();
   };
 
   const resetForm = () => {
@@ -193,16 +175,22 @@ export default function AIRegisterPage() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setTools(tools.filter((tool) => tool.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteToolAction(id);
+      await loadTools();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete tool");
+    }
   };
 
-  const toggleCompliance = (id: string) => {
-    setTools(
-      tools.map((tool) =>
-        tool.id === id ? { ...tool, isCompliant: !tool.isCompliant } : tool
-      )
-    );
+  const handleToggleCompliance = async (id: string) => {
+    try {
+      await toggleComplianceAction(id);
+      await loadTools();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update compliance");
+    }
   };
 
   return (
@@ -340,6 +328,12 @@ export default function AIRegisterPage() {
             </Dialog>
           </div>
 
+          {error && (
+            <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
+              {error}
+            </div>
+          )}
+
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -399,58 +393,13 @@ export default function AIRegisterPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTools.map((tool) => (
-                  <TableRow key={tool.id}>
-                    <TableCell className="font-medium">{tool.name}</TableCell>
-                    <TableCell>{tool.department}</TableCell>
-                    <TableCell>
-                      <Badge className={riskConfig[tool.risk].className}>
-                        {riskConfig[tool.risk].label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(tool.dateAdded).toLocaleDateString("nl-NL")}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={tool.isCompliant}
-                          onCheckedChange={() => toggleCompliance(tool.id)}
-                        />
-                        {tool.isCompliant ? (
-                          <span className="flex items-center gap-1 text-sm text-emerald-600">
-                            <CheckCircle2 className="h-4 w-4" />
-                            Conform
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-sm text-red-600">
-                            <AlertCircle className="h-4 w-4" />
-                            Actie Vereist
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(tool)}
-                        >
-                          <Pencil className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(tool.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </div>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center">
+                      Laden...
                     </TableCell>
                   </TableRow>
-                ))}
-                {filteredTools.length === 0 && (
+                ) : filteredTools.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={6}
@@ -459,6 +408,58 @@ export default function AIRegisterPage() {
                       Geen tools gevonden
                     </TableCell>
                   </TableRow>
+                ) : (
+                  filteredTools.map((tool) => (
+                    <TableRow key={tool.id}>
+                      <TableCell className="font-medium">{tool.name}</TableCell>
+                      <TableCell>{tool.department}</TableCell>
+                      <TableCell>
+                        <Badge className={riskConfig[tool.risk as RiskCategory].className}>
+                          {riskConfig[tool.risk as RiskCategory].label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(tool.date_added).toLocaleDateString("nl-NL")}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={tool.is_compliant}
+                            onCheckedChange={() => handleToggleCompliance(tool.id)}
+                          />
+                          {tool.is_compliant ? (
+                            <span className="flex items-center gap-1 text-sm text-emerald-600">
+                              <CheckCircle2 className="h-4 w-4" />
+                              Conform
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-sm text-red-600">
+                              <AlertCircle className="h-4 w-4" />
+                              Actie Vereist
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(tool)}
+                          >
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(tool.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>

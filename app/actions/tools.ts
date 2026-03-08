@@ -7,13 +7,19 @@ import {
   updateTool,
   deleteTool,
   toggleCompliance,
+  getAllEmployees,
+  getEmployeeById,
+  createEmployee,
+  updateEmployeeCertification,
+  getCertificationStats,
   type AiTool,
+  type Employee,
 } from '@/lib/db';
 
 /**
- * Server action to get all tools
+ * Get all AI tools
  */
-export async function fetchAllTools(): Promise<AiTool[]> {
+export async function getToolsAction(): Promise<AiTool[]> {
   try {
     return await getAllTools();
   } catch (error) {
@@ -23,9 +29,9 @@ export async function fetchAllTools(): Promise<AiTool[]> {
 }
 
 /**
- * Server action to get a single tool
+ * Get single tool by ID
  */
-export async function fetchTool(id: string): Promise<AiTool | null> {
+export async function getToolAction(id: string): Promise<AiTool | null> {
   try {
     return await getToolById(id);
   } catch (error) {
@@ -35,21 +41,20 @@ export async function fetchTool(id: string): Promise<AiTool | null> {
 }
 
 /**
- * Server action to create a new tool
+ * Create a new AI tool
  */
-export async function createNewTool(
-  name: string,
-  department: string,
-  risk: string,
-  purpose: string
-): Promise<AiTool> {
+export async function createToolAction(data: {
+  name: string;
+  department: string;
+  risk: string;
+  purpose: string;
+}): Promise<AiTool> {
   try {
-    // Validate inputs
-    if (!name || !department || !risk) {
+    if (!data.name || !data.department || !data.risk) {
       throw new Error('Missing required fields');
     }
 
-    return await createTool(name, department, risk, purpose);
+    return await createTool(data.name, data.department, data.risk, data.purpose);
   } catch (error) {
     console.error('[Server Action] Error creating tool:', error);
     throw error;
@@ -57,18 +62,27 @@ export async function createNewTool(
 }
 
 /**
- * Server action to update a tool
+ * Update an AI tool
  */
-export async function updateExistingTool(
+export async function updateToolAction(
   id: string,
-  name?: string,
-  department?: string,
-  risk?: string,
-  purpose?: string,
-  isCompliant?: boolean
+  data: Partial<{
+    name: string;
+    department: string;
+    risk: string;
+    purpose: string;
+    is_compliant: boolean;
+  }>
 ): Promise<AiTool | null> {
   try {
-    return await updateTool(id, name, department, risk, purpose, isCompliant);
+    return await updateTool(
+      id,
+      data.name,
+      data.department,
+      data.risk,
+      data.purpose,
+      data.is_compliant
+    );
   } catch (error) {
     console.error('[Server Action] Error updating tool:', error);
     throw error;
@@ -76,9 +90,9 @@ export async function updateExistingTool(
 }
 
 /**
- * Server action to delete a tool
+ * Delete an AI tool
  */
-export async function deleteExistingTool(id: string): Promise<boolean> {
+export async function deleteToolAction(id: string): Promise<boolean> {
   try {
     return await deleteTool(id);
   } catch (error) {
@@ -88,13 +102,94 @@ export async function deleteExistingTool(id: string): Promise<boolean> {
 }
 
 /**
- * Server action to toggle compliance
+ * Toggle tool compliance status
  */
-export async function toggleToolCompliance(id: string): Promise<AiTool | null> {
+export async function toggleComplianceAction(id: string): Promise<AiTool | null> {
   try {
     return await toggleCompliance(id);
   } catch (error) {
     console.error('[Server Action] Error toggling compliance:', error);
+    throw error;
+  }
+}
+
+// ===== EMPLOYEES ACTIONS =====
+
+/**
+ * Get all employees
+ */
+export async function getEmployeesAction(): Promise<Employee[]> {
+  try {
+    return await getAllEmployees();
+  } catch (error) {
+    console.error('[Server Action] Error fetching employees:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get single employee by ID
+ */
+export async function getEmployeeAction(id: string): Promise<Employee | null> {
+  try {
+    return await getEmployeeById(id);
+  } catch (error) {
+    console.error('[Server Action] Error fetching employee:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new employee
+ */
+export async function createEmployeeAction(data: {
+  name: string;
+  department: string;
+  status: string;
+}): Promise<Employee> {
+  try {
+    if (!data.name || !data.department) {
+      throw new Error('Missing required fields');
+    }
+
+    return await createEmployee(data.name, data.department, data.status || 'pending');
+  } catch (error) {
+    console.error('[Server Action] Error creating employee:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update employee certification
+ */
+export async function certifyEmployeeAction(
+  id: string,
+  certificateUrl: string
+): Promise<Employee | null> {
+  try {
+    if (!id || !certificateUrl) {
+      throw new Error('Missing required fields');
+    }
+
+    return await updateEmployeeCertification(id, certificateUrl);
+  } catch (error) {
+    console.error('[Server Action] Error certifying employee:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get certification statistics
+ */
+export async function getCertificationStatsAction(): Promise<{
+  total: number;
+  certified: number;
+  percentage: number;
+}> {
+  try {
+    return await getCertificationStats();
+  } catch (error) {
+    console.error('[Server Action] Error fetching stats:', error);
     throw error;
   }
 }
