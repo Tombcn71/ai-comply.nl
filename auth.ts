@@ -10,6 +10,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
+
 export const authOptions = {
   providers: [
     CredentialsProvider({
