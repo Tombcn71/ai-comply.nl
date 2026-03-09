@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { Pool } from "pg";
 
+// Jouw bestaande pool (perfect voor CRUD en Auth)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || process.env.POSTGRESQL_ADDON_URI,
   ssl: { rejectUnauthorized: false },
@@ -8,8 +9,7 @@ const pool = new Pool({
 
 export const auth = betterAuth({
   database: {
-    // Gebruik 'db' voor de pool instance en 'type' voor het dialect
-    db: pool,
+    db: pool,         // 'db' in plaats van 'client'
     type: "postgres",
   },
   secret: process.env.BETTER_AUTH_SECRET,
