@@ -2,11 +2,11 @@ import { betterAuth } from "better-auth";
 import { Pool } from "pg";
 
 const pool = new Pool({
-  connectionString: process.env.POSTGRESQL_ADDON_URI,
+  connectionString: process.env.DATABASE_URL || process.env.POSTGRESQL_ADDON_URI,
   ssl: { rejectUnauthorized: false },
 });
 
-// Better Auth v1 uses built-in database adapter
+// Better Auth with native PostgreSQL support
 export const auth = betterAuth({
   database: {
     type: "postgres",
