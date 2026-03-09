@@ -10,6 +10,14 @@ const pool = new Pool({
   },
 });
 
+// Ensure NEXTAUTH_SECRET is set for build time and runtime
+const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+if (!secret) {
+  throw new Error(
+    "NEXTAUTH_SECRET or AUTH_SECRET environment variable is required"
+  );
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
@@ -81,5 +89,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: "jwt" as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: secret,
 });
