@@ -1,8 +1,11 @@
 import { Pool, QueryResult } from 'pg';
 
-// Database connection pool voor Clever Cloud
+// Database connection pool met SSL-beveiliging voor GDPR-compliantie
 const pool = new Pool({
   connectionString: process.env.POSTGRESQL_ADDON_URI,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
 // Test connection
@@ -83,12 +86,23 @@ export async function initializeDatabase(): Promise<void> {
 
 export interface AiTool {
   id: string;
+  organization_id: string;
   name: string;
   department: string;
   risk: string;
   purpose: string;
   is_compliant: boolean;
-  date_added: Date;
+  date_added?: Date;
+}
+
+export interface Employee {
+  id: string;
+  organization_id: string;
+  name: string;
+  department: string;
+  status: string;
+  certificate_url?: string;
+  certified_date?: Date;
 }
 
 export interface Employee {
@@ -101,13 +115,14 @@ export interface Employee {
 }
 
 /**
- * Get all AI tools from database
+ * Get all AI tools for an organization
  */
-export async function getAllTools(): Promise<AiTool[]> {
+export async function getAllTools(organizationId: string): Promise<AiTool[]> {
   try {
     await initializeDatabase();
     const result: QueryResult<AiTool> = await pool.query(
-      'SELECT id, name, department, risk, purpose, is_compliant, date_added FROM ai_tools ORDER BY date_added DESC'
+      'SELECT id, organization_id, name, department, risk, purpose, is_compliant, date_added FROM ai_tools WHERE organization_id = $1 ORDER BY date_added DESC',
+      [organizationId]
     );
     return result.rows;
   } catch (error) {
@@ -250,11 +265,12 @@ export async function toggleCompliance(id: string): Promise<AiTool | null> {
 /**
  * Get all employees
  */
-export async function getAllEmployees(): Promise<Employee[]> {
+export async function getAllEmployees(organizationId: string): Promise<Employee[]> {
   try {
     await initializeDatabase();
     const result: QueryResult<Employee> = await pool.query(
-      'SELECT id, name, department, status, certificate_url, certified_date FROM employees ORDER BY name ASC'
+      'SELECT id, organization_id, name, department, status, certificate_url, certified_date FROM employees WHERE organization_id = $1 ORDER BY name ASC',
+      [organizationId]
     );
     return result.rows;
   } catch (error) {
@@ -330,7 +346,7 @@ export async function updateEmployeeCertification(
 /**
  * Get certification statistics
  */
-export async function getCertificationStats(): Promise<{
+export async function getCertificationStats(organizationId: string): Promise<{
   total: number;
   certified: number;
   percentage: number;
@@ -338,8 +354,8 @@ export async function getCertificationStats(): Promise<{
   try {
     await initializeDatabase();
     const result = await pool.query(
-      'SELECT COUNT(*) as total, SUM(CASE WHEN status = $1 THEN 1 ELSE 0 END) as certified FROM employees',
-      ['certified']
+      'SELECT COUNT(*) as total, SUM(CASE WHEN status = $1 THEN 1 ELSE 0 END) as certified FROM employees WHERE organization_id = $2',
+      ['certified', organizationId]
     );
     const row = result.rows[0];
     const total = parseInt(row.total) || 0;
@@ -352,6 +368,7 @@ export async function getCertificationStats(): Promise<{
     // Return empty stats instead of throwing
     return { total: 0, certified: 0, percentage: 0 };
   }
+}
 }
 
 export { pool };

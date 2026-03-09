@@ -1,7 +1,10 @@
 import { Pool } from 'pg';
 
+// SSL-beveiligde verbinding voor GDPR-compliantie
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRESQL_ADDON_URI;
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
   ssl: {
     rejectUnauthorized: false,
   },
