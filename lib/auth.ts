@@ -4,10 +4,10 @@ import { Pool } from "pg";
 
 export const auth = betterAuth({
   database: pgAdapter(new Pool({
-    // Clever Cloud vult POSTGRESQL_ADDON_URI automatisch in
+    // Gebruik de URI die Clever Cloud injecteert
     connectionString: process.env.POSTGRESQL_ADDON_URI || process.env.DATABASE_URL,
     ssl: {
-      rejectUnauthorized: false, // Dit voorkomt de crash op Clever Cloud
+      rejectUnauthorized: false, // Verplicht voor Clever Cloud
     },
   }), {
     schema: "public"
