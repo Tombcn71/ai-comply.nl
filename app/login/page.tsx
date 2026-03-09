@@ -31,18 +31,16 @@ export default function LoginPage() {
           },
           onError: (ctx) => {
             toast({
-              title: 'Error',
-              description: ctx.error.message || 'Login failed',
-              variant: 'destructive',
+              message: ctx.error.message || 'Login failed',
+              type: 'error',
             });
           },
         }
       );
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred',
-        variant: 'destructive',
+        message: 'An unexpected error occurred',
+        type: 'error',
       });
     } finally {
       setLoading(false);
