@@ -9,30 +9,46 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
-export default function LoginPage() {
+export default function RegisterPage() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast({
+        message: 'Wachtwoorden komen niet overeen',
+        type: 'error',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const result = await authClient.signIn.email(
+      await authClient.signUp.email(
         {
           email,
           password,
+          name,
         },
         {
           onSuccess: () => {
+            toast({
+              message: 'Account succesvol aangemaakt! Inloggen...',
+              type: 'success',
+            });
             router.push('/dashboard');
           },
           onError: (ctx) => {
             toast({
-              message: ctx.error.message || 'Login failed',
+              message: ctx.error.message || 'Registratie mislukt',
               type: 'error',
             });
           },
@@ -40,7 +56,7 @@ export default function LoginPage() {
       );
     } catch (error) {
       toast({
-        message: 'An unexpected error occurred',
+        message: 'Er is een onverwachte fout opgetreden',
         type: 'error',
       });
     } finally {
@@ -52,11 +68,24 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>Sign in to your AI Comply account</CardDescription>
+          <CardTitle>Registreer</CardTitle>
+          <CardDescription>Maak een AI Comply account aan</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium">
+                Naam
+              </label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Voornaam Achternaam"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
                 Email
@@ -72,7 +101,7 @@ export default function LoginPage() {
             </div>
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium">
-                Password
+                Wachtwoord
               </label>
               <Input
                 id="password"
@@ -83,14 +112,27 @@ export default function LoginPage() {
                 required
               />
             </div>
+            <div className="space-y-2">
+              <label htmlFor="confirmPassword" className="text-sm font-medium">
+                Wachtwoord bevestigen
+              </label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Registreren...' : 'Registreer'}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            <span className="text-muted-foreground">Nog geen account? </span>
-            <Link href="/register" className="text-primary hover:underline font-medium">
-              Registreer hier
+            <span className="text-muted-foreground">Al een account? </span>
+            <Link href="/login" className="text-primary hover:underline font-medium">
+              Log in hier
             </Link>
           </div>
         </CardContent>
