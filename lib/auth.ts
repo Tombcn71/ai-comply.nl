@@ -14,8 +14,9 @@ export const auth = betterAuth({
   },
   secret: process.env.BETTER_AUTH_SECRET,
   appName: "AI Comply",
-  baseURL: process.env.NEXTAUTH_URL || "http://localhost:3000",
+  // Gebruik de specifieke Better Auth variabele
+  baseURL: process.env.BETTER_AUTH_URL,
   emailAndPassword: {
     enabled: true,
   },
-});
+}); 
