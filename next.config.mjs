@@ -10,13 +10,17 @@ const nextConfig = {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 5,
   },
-  serverExternalPackages: ['bcryptjs', 'pg'],
+  serverExternalPackages: ['bcryptjs', 'pg', 'better-auth'],
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',
     },
   },
-  turbopack: {},
+  turbopack: {
+    resolveAlias: {
+      '@': './',
+    },
+  },
 };
 
 export default nextConfig;
