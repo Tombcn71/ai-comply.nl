@@ -1,7 +1,5 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-// @ts-ignore
-
 import { compare } from "bcryptjs";
 import { Pool } from "pg";
 
@@ -9,7 +7,6 @@ const pool = new Pool({
   connectionString: process.env.POSTGRESQL_ADDON_URI,
   ssl: { rejectUnauthorized: false },
 });
-
 
 export const authOptions = {
   providers: [
@@ -27,12 +24,7 @@ export const authOptions = {
           const user = result.rows[0];
           const passwordMatch = await compare(credentials.password, user.password_hash);
           if (!passwordMatch) return null;
-          return {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            organization_id: user.organization_id
-          };
+          return { id: user.id, email: user.email, role: user.role, organization_id: user.organization_id };
         } catch (error) {
           return null;
         }
@@ -58,7 +50,11 @@ export const authOptions = {
     },
   },
   pages: { signIn: "/login" },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-voor-build-fase",
 };
 
-export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
+const nextAuthGate = NextAuth(authOptions);
+export const handlers = nextAuthGate.handlers;
+export const auth = nextAuthGate.auth;
+export const signIn = nextAuthGate.signIn;
+export const signOut = nextAuthGate.signOut;
