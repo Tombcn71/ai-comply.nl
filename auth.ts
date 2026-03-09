@@ -1,5 +1,5 @@
 import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { Pool } from "pg";
 
@@ -10,46 +10,25 @@ const pool = new Pool({
   },
 });
 
-// Ensure NEXTAUTH_SECRET is set for build time and runtime
-const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
-if (!secret) {
-  throw new Error(
-    "NEXTAUTH_SECRET or AUTH_SECRET environment variable is required"
-  );
-}
-
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const authOptions = {
   providers: [
-    Credentials({
+    CredentialsProvider({
+      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials");
-        }
-
+        if (!credentials?.email || !credentials?.password) return null;
         try {
           const result = await pool.query(
             "SELECT id, email, password_hash, organization_id, role FROM users WHERE email = $1",
             [credentials.email]
           );
-
-          if (result.rows.length === 0) {
-            throw new Error("No user found");
-          }
-
+          if (result.rows.length === 0) return null;
           const user = result.rows[0];
-          const passwordMatch = await compare(
-            credentials.password as string,
-            user.password_hash
-          );
-
-          if (!passwordMatch) {
-            throw new Error("Invalid password");
-          }
-
+          const passwordMatch = await compare(credentials.password, user.password_hash);
+          if (!passwordMatch) return null;
           return {
             id: user.id,
             email: user.email,
@@ -57,8 +36,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             role: user.role,
           };
         } catch (error) {
-          console.error("[Auth] Authorization error:", error);
-          throw new Error("Authorization failed");
+          return null;
         }
       },
     }),
@@ -66,9 +44,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id as string;
-        token.organization_id = user.organization_id as string;
-        token.role = user.role as string;
+        token.id = user.id;
+        token.organization_id = (user as any).organization_id;
+        token.role = (user as any).role;
       }
       return token;
     },
@@ -81,13 +59,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
-  session: {
-    strategy: "jwt" as const,
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  secret: secret,
-});
+  pages: { signIn: "/login", error: "/login" },
+  session: { strategy: "jwt" as const },
+  secret: process.env.NEXTAUTH_SECRET,
+};
+
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST, handler as handlers };
