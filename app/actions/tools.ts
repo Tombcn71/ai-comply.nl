@@ -1,7 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 import {
   getAllTools,
   getToolById,
@@ -24,11 +25,15 @@ import { uploadCertificateToCellar } from '@/lib/s3';
  */
 export async function getToolsAction(): Promise<AiTool[]> {
   try {
-    const session = await auth();
-    if (!session?.user?.organization_id) {
+    const headersList = await headers();
+    const session = await auth.api.getSession({
+      headers: headersList,
+    });
+
+    if (!session?.data?.user?.organization_id) {
       throw new Error('Unauthorized: No organization');
     }
-    return await getAllTools(session.user.organization_id);
+    return await getAllTools(session.data.user.organization_id);
   } catch (error) {
     console.error('[Server Action] Error fetching tools:', error);
     throw error;

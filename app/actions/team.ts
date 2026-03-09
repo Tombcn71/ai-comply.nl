@@ -1,9 +1,10 @@
 'use server';
 
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth';
 import { pool } from '@/lib/db';
 import bcryptjs from 'bcryptjs';
 import crypto from 'crypto';
+import { headers } from 'next/headers';
 
 /**
  * Get team members for the organization
@@ -15,14 +16,18 @@ export async function getTeamMembersAction(): Promise<Array<{
   created_at: Date;
 }>> {
   try {
-    const session = await auth();
-    if (!session?.user?.organization_id) {
+    const headersList = await headers();
+    const session = await auth.api.getSession({
+      headers: headersList,
+    });
+
+    if (!session?.data?.user?.organization_id) {
       throw new Error('Unauthorized: No organization');
     }
 
     const result = await pool.query(
       'SELECT id, email, role, created_at FROM users WHERE organization_id = $1 ORDER BY created_at DESC',
-      [session.user.organization_id]
+      [session.data.user.organization_id]
     );
 
     return result.rows;
