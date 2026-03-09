@@ -4,23 +4,11 @@ import { compare } from "bcryptjs";
 import { Pool } from "pg";
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || process.env.POSTGRESQL_ADDON_URI,
+  connectionString: process.env.POSTGRESQL_ADDON_URI,
   ssl: {
     rejectUnauthorized: false,
   },
 });
-
-// Generate a default secret if none is provided (for development)
-const getSecret = () => {
-  const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
-  if (!secret) {
-    console.warn(
-      "[Auth] Warning: No NEXTAUTH_SECRET set. Using default for development only."
-    );
-    return "default-dev-secret-change-in-production";
-  }
-  return secret;
-};
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -93,5 +81,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: "jwt" as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: getSecret(),
+  secret: process.env.NEXTAUTH_SECRET,
 });
