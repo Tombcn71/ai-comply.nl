@@ -6,17 +6,16 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// Better Auth with native PostgreSQL support
 export const auth = betterAuth({
   database: {
+    // Gebruik 'db' voor de pool instance en 'type' voor het dialect
+    db: pool,
     type: "postgres",
-    client: pool,
   },
   secret: process.env.BETTER_AUTH_SECRET,
   appName: "AI Comply",
-  // Gebruik de specifieke Better Auth variabele
   baseURL: process.env.BETTER_AUTH_URL,
   emailAndPassword: {
     enabled: true,
   },
-}); 
+});
