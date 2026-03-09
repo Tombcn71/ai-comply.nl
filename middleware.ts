@@ -1,7 +1,8 @@
-import { auth } from "@/auth";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default auth((req) => {
-  // Protected routes check
+export async function middleware(request: NextRequest) {
   const protectedRoutes = [
     "/dashboard",
     "/api/tools",
@@ -10,14 +11,29 @@ export default auth((req) => {
   ];
 
   const isProtectedRoute = protectedRoutes.some((route) =>
-    req.nextUrl.pathname.startsWith(route)
+    request.nextUrl.pathname.startsWith(route)
   );
 
-  if (isProtectedRoute && !req.auth) {
-    const url = new URL("/login", req.nextUrl.origin);
-    return Response.redirect(url);
+  if (isProtectedRoute) {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    if (!token) {
+      const url = new URL("/login", request.nextUrl.origin);
+      return NextResponse.redirect(url);
+    }
+
+    // Check if user has organization_id
+    if (!token.organization_id) {
+      const url = new URL("/login", request.nextUrl.origin);
+      return NextResponse.redirect(url);
+    }
   }
-});
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
