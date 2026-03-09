@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import { getServerSession } from "next-auth/next";
 import CredentialsProvider from "next-auth/providers/credentials";
+// @ts-ignore
 import { compare } from "bcryptjs";
 import { Pool } from "pg";
 
