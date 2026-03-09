@@ -24,7 +24,12 @@ export const authOptions = {
           const user = result.rows[0];
           const passwordMatch = await compare(credentials.password, user.password_hash);
           if (!passwordMatch) return null;
-          return { id: user.id, email: user.email, role: user.role, organization_id: user.organization_id };
+          return {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            organization_id: user.organization_id
+          };
         } catch (error) {
           return null;
         }
@@ -50,11 +55,7 @@ export const authOptions = {
     },
   },
   pages: { signIn: "/login" },
-  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-voor-build-fase",
+  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-123",
 };
 
-const nextAuthGate = NextAuth(authOptions);
-export const handlers = nextAuthGate.handlers;
-export const auth = nextAuthGate.auth;
-export const signIn = nextAuthGate.signIn;
-export const signOut = nextAuthGate.signOut;
+export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
