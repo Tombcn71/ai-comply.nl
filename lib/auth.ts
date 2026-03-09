@@ -1,18 +1,19 @@
 import { betterAuth } from "better-auth";
-import { pgAdapter } from "better-auth/adapters/pg";
+import { pgAdapter } from "@better-auth/pg-adapter";
 import { Pool } from "pg";
 
 export const auth = betterAuth({
   database: pgAdapter(new Pool({
-    // Gebruik de URI die je in je dashboard ziet
-    connectionString: process.env.POSTGRESQL_ADDON_URI || process.env.DATABASE_URL,
+    connectionString: process.env.DATABASE_URL || process.env.POSTGRESQL_ADDON_URI,
     ssl: {
-      rejectUnauthorized: false // DIT IS HET VERSCHIL
-    }
+      rejectUnauthorized: false,
+    },
   }), {
-    schema: "public"
+    schema: "public",
   }),
-  // ... de rest van je config (secret, url, etc.)
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: process.env.NEXTAUTH_URL || "http://localhost:3000",
+  emailAndPassword: {
+    enabled: true,
+  },
 });
