@@ -25,7 +25,12 @@ export const authOptions = {
           const user = result.rows[0];
           const passwordMatch = await compare(credentials.password, user.password_hash);
           if (!passwordMatch) return null;
-          return { id: user.id, email: user.email, role: user.role, organization_id: user.organization_id };
+          return {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            organization_id: user.organization_id
+          };
         } catch (error) {
           return null;
         }
@@ -33,19 +38,19 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: any; user?: any }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
-        token.organization_id = (user as any).organization_id;
+        token.role = user.role;
+        token.organization_id = user.organization_id;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: any }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).organization_id = token.organization_id;
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.organization_id = token.organization_id;
       }
       return session;
     },
@@ -55,6 +60,9 @@ export const authOptions = {
 };
 
 const handler = NextAuth(authOptions);
+
 export const handlers = { GET: handler, POST: handler };
+
 export { handler as GET, handler as POST };
+
 export const auth = () => getServerSession(authOptions);
