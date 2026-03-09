@@ -1,114 +1,137 @@
 import { Pool } from 'pg';
 import bcryptjs from 'bcryptjs';
-import crypto from 'crypto';
+
+// SSL-beveiligde verbinding voor GDPR-compliantie
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRESQL_ADDON_URI;
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL ? 
-    `${process.env.DATABASE_URL}${process.env.DATABASE_URL.includes('?') ? '&' : '?'}sslmode=disable` : 
-    undefined,
-  ssl: false,
+  connectionString,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
 async function seed() {
-  const client = await pool.connect();
   try {
-    console.log('[Seed] Starting data seeding...');
+    console.log('[Seed] Starting database seeding...');
 
     // 1. Create organization
-    console.log('[Seed] Creating organization...');
-    const orgResult = await client.query(
+    console.log('[Seed] Creating organization "Test BV"...');
+    const orgResult = await pool.query(
       `INSERT INTO organizations (name, email, created_at)
        VALUES ($1, $2, NOW())
-       RETURNING id, name`,
-      ['Test BV', 'info@testbv.nl']
+       RETURNING id`,
+      ['Test BV', 'contact@testbv.nl']
     );
-    const orgId = orgResult.rows[0].id;
-    console.log('[Seed] Organization created:', orgResult.rows[0].name, `(ID: ${orgId})`);
+    const organizationId = orgResult.rows[0].id;
+    console.log('[Seed] Organization created:', organizationId);
 
-    // 2. Create users (admin + HR member)
-    console.log('[Seed] Creating users...');
+    // 2. Create users (admin + hr member)
+    console.log('[Seed] Creating test users...');
     const adminPassword = await bcryptjs.hash('Admin123!', 12);
     const hrPassword = await bcryptjs.hash('HR123!', 12);
 
-    const adminResult = await client.query(
-      `INSERT INTO users (email, password_hash, organization_id, role, created_at)
+    const adminResult = await pool.query(
+      `INSERT INTO users (organization_id, email, password_hash, role, created_at)
        VALUES ($1, $2, $3, $4, NOW())
-       RETURNING id, email, role`,
-      ['admin@testbv.nl', adminPassword, orgId, 'admin']
+       RETURNING id, email`,
+      [organizationId, 'admin@testbv.nl', adminPassword, 'admin']
     );
-    console.log('[Seed] Admin created:', adminResult.rows[0].email);
+    console.log('[Seed] Admin user created:', adminResult.rows[0].email);
 
-    const hrResult = await client.query(
-      `INSERT INTO users (email, password_hash, organization_id, role, created_at)
+    const hrResult = await pool.query(
+      `INSERT INTO users (organization_id, email, password_hash, role, created_at)
        VALUES ($1, $2, $3, $4, NOW())
-       RETURNING id, email, role`,
-      ['hr@testbv.nl', hrPassword, orgId, 'member']
+       RETURNING id, email`,
+      [organizationId, 'hr@testbv.nl', hrPassword, 'member']
     );
-    console.log('[Seed] HR member created:', hrResult.rows[0].email);
+    console.log('[Seed] HR user created:', hrResult.rows[0].email);
 
-    // 3. Create AI tools
+    // 3. Create 5 AI tools
     console.log('[Seed] Creating AI tools...');
     const tools = [
-      { name: 'ChatGPT Enterprise', department: 'Marketing', risk: 'beperkt', purpose: 'Content creation and analysis' },
-      { name: 'Microsoft Copilot', department: 'IT', risk: 'beperkt', purpose: 'Code assistance and development' },
-      { name: 'Jasper AI', department: 'Content', risk: 'beperkt', purpose: 'Blog and article writing' },
-      { name: 'Notion AI', department: 'Product', risk: 'minimaal', purpose: 'Document summarization' },
-      { name: 'Midjourney', department: 'Design', risk: 'beperkt', purpose: 'Image generation' },
+      {
+        name: 'ChatGPT Enterprise',
+        department: 'Marketing',
+        risk: 'beperkt',
+        purpose: 'Content creation and customer support',
+        is_compliant: true,
+      },
+      {
+        name: 'Microsoft Copilot',
+        department: 'IT',
+        risk: 'beperkt',
+        purpose: 'Code assistance and documentation',
+        is_compliant: true,
+      },
+      {
+        name: 'Claude AI',
+        department: 'Product',
+        risk: 'minimaal',
+        purpose: 'Analysis and research',
+        is_compliant: true,
+      },
+      {
+        name: 'Jasper AI',
+        department: 'Marketing',
+        risk: 'beperkt',
+        purpose: 'Email and ad copy generation',
+        is_compliant: false,
+      },
+      {
+        name: 'Midjourney',
+        department: 'Design',
+        risk: 'beperkt',
+        purpose: 'Image generation for marketing materials',
+        is_compliant: false,
+      },
     ];
 
     for (const tool of tools) {
-      await client.query(
-        `INSERT INTO ai_tools (name, department, risk, purpose, is_compliant, organization_id, date_added)
+      await pool.query(
+        `INSERT INTO ai_tools (organization_id, name, department, risk, purpose, is_compliant, date_added)
          VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-        [tool.name, tool.department, tool.risk, tool.purpose, true, orgId]
+        [organizationId, tool.name, tool.department, tool.risk, tool.purpose, tool.is_compliant]
       );
     }
-    console.log(`[Seed] Created ${tools.length} AI tools`);
+    console.log('[Seed] Created 5 AI tools');
 
-    // 4. Create employees
+    // 4. Create 10 employees
     console.log('[Seed] Creating employees...');
-    const departments = ['Marketing', 'IT', 'HR', 'Finance', 'Operations'];
-    const firstNames = ['Jan', 'Maria', 'Peter', 'Anna', 'Pieter', 'Sophie', 'Thomas', 'Elena', 'Marco', 'Laura'];
-    const lastNames = ['de Vries', 'Jansen', 'Bakker', 'van der Berg', 'Müller', 'Schmidt', 'Kowalski', 'Lopez', 'Chen', 'Kim'];
-
-    const employees = [];
-    for (let i = 0; i < 10; i++) {
-      const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-      const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-      const dept = departments[Math.floor(Math.random() * departments.length)];
-      const certified = Math.random() > 0.4; // 60% certified
-
-      employees.push({
-        name: `${firstName} ${lastName}`,
-        department: dept,
-        status: certified ? 'certified' : 'pending',
-      });
-    }
+    const employees = [
+      { name: 'Jan de Vries', department: 'Marketing', status: 'certified' },
+      { name: 'Maria Jansen', department: 'IT', status: 'certified' },
+      { name: 'Pieter Bakker', department: 'HR', status: 'certified' },
+      { name: 'Lisa Müller', department: 'Product', status: 'certified' },
+      { name: 'Thomas König', department: 'Finance', status: 'pending' },
+      { name: 'Anna Schmidt', department: 'Marketing', status: 'certified' },
+      { name: 'Michel Dupont', department: 'IT', status: 'pending' },
+      { name: 'Sarah Johnson', department: 'Product', status: 'certified' },
+      { name: 'Carlos García', department: 'Sales', status: 'pending' },
+      { name: 'Emma Wilson', department: 'HR', status: 'certified' },
+    ];
 
     for (const emp of employees) {
-      await client.query(
-        `INSERT INTO employees (name, department, status, organization_id, created_at)
+      await pool.query(
+        `INSERT INTO employees (organization_id, name, department, status, created_at)
          VALUES ($1, $2, $3, $4, NOW())`,
-        [emp.name, emp.department, emp.status, orgId]
+        [organizationId, emp.name, emp.department, emp.status]
       );
     }
-    console.log(`[Seed] Created ${employees.length} employees`);
+    console.log('[Seed] Created 10 employees');
 
-    // Print summary
-    console.log('\n[Seed] ========== SEEDING COMPLETE ==========');
-    console.log('[Seed] Test Organization: Test BV');
-    console.log('[Seed] Admin User: admin@testbv.nl / Admin123!');
-    console.log('[Seed] HR User: hr@testbv.nl / HR123!');
-    console.log('[Seed] AI Tools: 5 created');
-    console.log('[Seed] Employees: 10 created (6 certified, 4 pending)');
-    console.log('[Seed] ==========================================\n');
+    console.log('\n[Seed] ✓ Database seeding completed successfully!');
+    console.log('\n[Seed] Test Credentials:');
+    console.log('  Admin:  admin@testbv.nl / Admin123!');
+    console.log('  Member: hr@testbv.nl / HR123!');
+    console.log('\n[Seed] Organization: Test BV (ID:', organizationId, ')');
 
-  } catch (error) {
-    console.error('[Seed] Error seeding data:', error);
-    throw error;
-  } finally {
-    client.release();
     await pool.end();
+    process.exit(0);
+  } catch (error) {
+    console.error('[Seed] Error during seeding:', error);
+    await pool.end();
+    process.exit(1);
   }
 }
 
