@@ -214,5 +214,73 @@ export async function toggleCompliance(toolId: string): Promise<boolean> {
   }
 }
 
+/**
+ * Get a single tool by ID
+ */
+export async function getToolById(toolId: string): Promise<AiTool | null> {
+  try {
+    await initializeDatabase();
+    const result = await pool.query(
+      'SELECT id, organization_id, name, department, risk, purpose, is_compliant, date_added FROM ai_tools WHERE id = $1',
+      [toolId]
+    );
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('[Database] Error fetching tool:', error);
+    return null;
+  }
+}
+
+/**
+ * Create a new employee
+ */
+export async function createEmployee(organizationId: string, employeeData: Omit<Employee, 'id' | 'organization_id'>): Promise<Employee | null> {
+  try {
+    await initializeDatabase();
+    const result = await pool.query(
+      'INSERT INTO employees (organization_id, name, department, status, certificate_url, certified_date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [organizationId, employeeData.name, employeeData.department, employeeData.status || 'pending', employeeData.certificate_url, employeeData.certified_date]
+    );
+    return result.rows[0];
+  } catch (error) {
+    console.error('[Database] Error creating employee:', error);
+    return null;
+  }
+}
+
+/**
+ * Get a single employee by ID
+ */
+export async function getEmployeeById(employeeId: string): Promise<Employee | null> {
+  try {
+    await initializeDatabase();
+    const result = await pool.query(
+      'SELECT id, organization_id, name, department, status, certificate_url, certified_date FROM employees WHERE id = $1',
+      [employeeId]
+    );
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('[Database] Error fetching employee:', error);
+    return null;
+  }
+}
+
+/**
+ * Update employee certification status
+ */
+export async function updateEmployeeCertification(employeeId: string, certificateUrl: string, certifiedDate: Date): Promise<Employee | null> {
+  try {
+    await initializeDatabase();
+    const result = await pool.query(
+      'UPDATE employees SET certificate_url = $1, certified_date = $2, status = $3 WHERE id = $4 RETURNING *',
+      [certificateUrl, certifiedDate, 'certified', employeeId]
+    );
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('[Database] Error updating employee certification:', error);
+    return null;
+  }
+}
+
 // Export pool for external use
 export { pool };
