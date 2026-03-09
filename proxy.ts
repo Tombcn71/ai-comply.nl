@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const protectedRoutes = [
     "/dashboard",
     "/api/tools",
@@ -15,16 +14,10 @@ export async function middleware(request: NextRequest) {
   );
 
   if (isProtectedRoute) {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.redirect(new URL("/login", request.nextUrl.origin));
-    }
-
-    // Check if user has organization_id
-    if (!session.user?.organization_id) {
+    // Check for auth cookie or session
+    const authCookie = request.cookies.get("better-auth.session_token");
+    
+    if (!authCookie) {
       return NextResponse.redirect(new URL("/login", request.nextUrl.origin));
     }
   }
