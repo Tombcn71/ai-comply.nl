@@ -1,4 +1,3 @@
-import { GET, POST } from "@/auth";
+import { handlers } from "@/auth";
 
-export const dynamic = 'force-dynamic';
-export { GET, POST };
+export const { GET, POST } = handlers;
