@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { auth } from '@/auth';
 import {
   getAllTools,
   getToolById,
@@ -19,11 +20,15 @@ import {
 import { uploadCertificateToCellar } from '@/lib/s3';
 
 /**
- * Get all AI tools
+ * Get all AI tools for the user's organization
  */
 export async function getToolsAction(): Promise<AiTool[]> {
   try {
-    return await getAllTools();
+    const session = await auth();
+    if (!session?.user?.organization_id) {
+      throw new Error('Unauthorized: No organization');
+    }
+    return await getAllTools(session.user.organization_id);
   } catch (error) {
     console.error('[Server Action] Error fetching tools:', error);
     throw error;
@@ -126,11 +131,15 @@ export async function toggleComplianceAction(id: string): Promise<AiTool | null>
 // ===== EMPLOYEES ACTIONS =====
 
 /**
- * Get all employees
+ * Get all employees for the user's organization
  */
 export async function getEmployeesAction(): Promise<Employee[]> {
   try {
-    return await getAllEmployees();
+    const session = await auth();
+    if (!session?.user?.organization_id) {
+      throw new Error('Unauthorized: No organization');
+    }
+    return await getAllEmployees(session.user.organization_id);
   } catch (error) {
     console.error('[Server Action] Error fetching employees:', error);
     throw error;
@@ -193,7 +202,7 @@ export async function certifyEmployeeAction(
 }
 
 /**
- * Get certification statistics
+ * Get certification statistics for the user's organization
  */
 export async function getCertificationStatsAction(): Promise<{
   total: number;
@@ -201,7 +210,11 @@ export async function getCertificationStatsAction(): Promise<{
   percentage: number;
 }> {
   try {
-    return await getCertificationStats();
+    const session = await auth();
+    if (!session?.user?.organization_id) {
+      throw new Error('Unauthorized: No organization');
+    }
+    return await getCertificationStats(session.user.organization_id);
   } catch (error) {
     console.error('[Server Action] Error fetching stats:', error);
     throw error;
@@ -218,6 +231,12 @@ export async function uploadCertificateAction(
   try {
     console.log("[uploadCertificateAction] Starting upload for employee:", employeeId);
     
+    // Verify organization ownership
+    const session = await auth();
+    if (!session?.user?.organization_id) {
+      throw new Error('Unauthorized: No organization');
+    }
+
     const file = formData.get('certificate') as File;
     
     if (!file) {

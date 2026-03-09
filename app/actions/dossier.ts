@@ -1,5 +1,6 @@
 'use server';
 
+import { auth } from '@/auth';
 import { getAllEmployees, getAllTools } from '@/lib/db';
 
 export interface DossierData {
@@ -30,11 +31,16 @@ export interface DossierData {
  */
 export async function getDossierDataAction(): Promise<DossierData> {
   try {
+    const session = await auth();
+    if (!session?.user?.organization_id) {
+      throw new Error('Unauthorized: No organization');
+    }
+
     console.log('[Dossier Action] Fetching data for dossier...');
     
     const [tools, employees] = await Promise.all([
-      getAllTools(),
-      getAllEmployees(),
+      getAllTools(session.user.organization_id),
+      getAllEmployees(session.user.organization_id),
     ]);
 
     const totalTools = tools.length;

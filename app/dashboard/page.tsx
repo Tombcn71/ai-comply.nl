@@ -4,6 +4,7 @@ import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { ToolsTable } from "@/components/dashboard/tools-table";
 import { TrainingChart } from "@/components/dashboard/training-chart";
 import { getAllEmployees, getAllTools, getCertificationStats } from "@/lib/db";
+import { auth } from "@/auth";
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,23 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
+  // Get session with organization_id
+  const session = await auth();
+  if (!session?.user?.organization_id) {
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <DashboardSidebar />
+        <div className="pl-0 pt-16 transition-all duration-300 lg:pl-64 lg:pt-0">
+          <DashboardHeader />
+          <main className="p-6">
+            <h1 className="text-2xl font-bold text-foreground">Geen toegang</h1>
+            <p className="text-muted-foreground">Geen organisatie gekoppeld aan uw account.</p>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   // Fetch all data from database with error handling
   let employees = [];
   let tools = [];
@@ -19,9 +37,9 @@ export default async function DashboardPage() {
 
   try {
     const results = await Promise.all([
-      getAllEmployees(),
-      getAllTools(),
-      getCertificationStats(),
+      getAllEmployees(session.user.organization_id),
+      getAllTools(session.user.organization_id),
+      getCertificationStats(session.user.organization_id),
     ]);
     employees = results[0];
     tools = results[1];
