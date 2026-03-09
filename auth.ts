@@ -4,7 +4,7 @@ import { compare } from "bcryptjs";
 import { Pool } from "pg";
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || process.env.POSTGRESQL_ADDON_URI,
   ssl: {
     rejectUnauthorized: false,
   },
@@ -56,19 +56,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.organization_id = user.organization_id;
-        token.role = user.role;
+        token.id = user.id as string;
+        token.organization_id = user.organization_id as string;
+        token.role = user.role as string;
       }
       return token;
     },
-    session({ session, token }) {
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.organization_id = token.organization_id as string;
-        session.user.role = token.role as string;
+        (session.user as any).id = token.id;
+        (session.user as any).organization_id = token.organization_id;
+        (session.user as any).role = token.role;
       }
       return session;
     },
@@ -78,7 +78,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: "/login",
   },
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
 });
