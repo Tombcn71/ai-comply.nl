@@ -1,7 +1,8 @@
-import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
 
-export default auth((req) => {
+export async function middleware(request: NextRequest) {
   const protectedRoutes = [
     "/dashboard",
     "/api/tools",
@@ -10,22 +11,26 @@ export default auth((req) => {
   ];
 
   const isProtectedRoute = protectedRoutes.some((route) =>
-    req.nextUrl.pathname.startsWith(route)
+    request.nextUrl.pathname.startsWith(route)
   );
 
-  if (isProtectedRoute && !req.auth) {
-    const url = new URL("/login", req.nextUrl.origin);
-    return NextResponse.redirect(url);
-  }
+  if (isProtectedRoute) {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
 
-  // Check if user has organization_id
-  if (isProtectedRoute && req.auth && !req.auth.user?.organization_id) {
-    const url = new URL("/login", req.nextUrl.origin);
-    return NextResponse.redirect(url);
+    if (!session) {
+      return NextResponse.redirect(new URL("/login", request.nextUrl.origin));
+    }
+
+    // Check if user has organization_id
+    if (!session.user?.organization_id) {
+      return NextResponse.redirect(new URL("/login", request.nextUrl.origin));
+    }
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
