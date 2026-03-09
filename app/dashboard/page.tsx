@@ -4,7 +4,8 @@ import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { ToolsTable } from "@/components/dashboard/tools-table";
 import { TrainingChart } from "@/components/dashboard/training-chart";
 import { getAllEmployees, getAllTools, getCertificationStats } from "@/lib/db";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 export const dynamic = 'force-dynamic';
 
@@ -13,8 +14,21 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
-  // Get session with organization_id
-  const session = await auth();
+  // Get session with Better Auth via API
+  const cookieStore = await cookies();
+  let session = null;
+  
+  try {
+    const response = await auth.api.getSession({
+      headers: {
+        cookie: cookieStore.toString(),
+      },
+    });
+    session = response?.data;
+  } catch (error) {
+    console.error('[Dashboard] Error fetching session:', error);
+  }
+
   if (!session?.user?.organization_id) {
     return (
       <div className="min-h-screen bg-muted/30">

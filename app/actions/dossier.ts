@@ -1,7 +1,8 @@
 'use server';
 
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth';
 import { getAllEmployees, getAllTools } from '@/lib/db';
+import { headers } from 'next/headers';
 
 export interface DossierData {
   tools: Array<{
