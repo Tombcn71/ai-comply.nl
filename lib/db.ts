@@ -369,6 +369,5 @@ export async function getCertificationStats(organizationId: string): Promise<{
     return { total: 0, certified: 0, percentage: 0 };
   }
 }
-}
 
 export { pool };
