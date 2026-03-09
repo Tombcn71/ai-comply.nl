@@ -1,13 +1,13 @@
 import { betterAuth } from "better-auth";
-import { pgAdapter } from "@better-auth/pg-adapter"; // Belangrijk: installeer dit!
+import { pgAdapter } from "@better-auth/pg-adapter";
 import { Pool } from "pg";
 
 export const auth = betterAuth({
-  // Gebruik de adapter functie in plaats van een object
   database: pgAdapter(new Pool({
+    // Clever Cloud vult POSTGRESQL_ADDON_URI automatisch in
     connectionString: process.env.POSTGRESQL_ADDON_URI || process.env.DATABASE_URL,
     ssl: {
-      rejectUnauthorized: false,
+      rejectUnauthorized: false, // Dit voorkomt de crash op Clever Cloud
     },
   }), {
     schema: "public"
