@@ -1,0 +1,6 @@
+{
+  "build": {
+    "type": "npm",
+    "goal": "run build"
+  }
+}
