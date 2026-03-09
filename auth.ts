@@ -1,7 +1,5 @@
 import NextAuth from "next-auth";
-import { getServerSession } from "next-auth/next";
 import CredentialsProvider from "next-auth/providers/credentials";
-// @ts-ignore
 import { compare } from "bcryptjs";
 import { Pool } from "pg";
 
@@ -21,16 +19,22 @@ export const authOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
         try {
-          const result = await pool.query("SELECT * FROM users WHERE email = $1", [credentials.email]);
+          const result = await pool.query(
+            "SELECT * FROM users WHERE email = $1",
+            [credentials.email]
+          );
           if (result.rows.length === 0) return null;
           const user = result.rows[0];
-          const passwordMatch = await compare(credentials.password, user.password_hash);
+          const passwordMatch = await compare(
+            credentials.password,
+            user.password_hash
+          );
           if (!passwordMatch) return null;
           return {
             id: user.id,
             email: user.email,
             role: user.role,
-            organization_id: user.organization_id
+            organization_id: user.organization_id,
           };
         } catch (error) {
           return null;
@@ -60,10 +64,4 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-const handler = NextAuth(authOptions);
-
-export const handlers = { GET: handler, POST: handler };
-
-export { handler as GET, handler as POST };
-
-export const auth = () => getServerSession(authOptions);
+export const { handlers, auth } = NextAuth(authOptions);
