@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { getDossierDataAction } from "@/app/actions/dossier";
 import { generateDossierPDF, downloadPDF } from "@/lib/pdf-generator";
+import { useSession } from "@/lib/auth-client";
+import { useEffect } from "react";
 
 const checklistItems = [
   {
@@ -90,10 +92,17 @@ const GENERATION_STEPS = [
 ];
 
 export default function DossierPage() {
+  const { data: session } = useSession();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState("");
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (session && !(session as any)?.session?.activeOrganizationId) {
+      window.location.href = "/dashboard";
+    }
+  }, [session]);
 
   const handleGenerate = async () => {
     try {

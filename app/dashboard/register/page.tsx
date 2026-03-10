@@ -53,19 +53,13 @@ import {
   toggleComplianceAction,
   getToolsAction,
 } from "@/app/actions/tools";
+import type { AiTool } from "@/lib/db";
+import { useSession } from "@/lib/auth-client";
 
 type RiskCategory = "minimaal" | "beperkt" | "hoog" | "onaanvaardbaar";
 type Department = "Marketing" | "HR" | "IT" | "Sales";
 
-interface Tool {
-  id: string;
-  name: string;
-  department: Department;
-  risk: RiskCategory;
-  date_added: string;
-  purpose: string;
-  is_compliant: boolean;
-}
+// we rely on AiTool from the db module for the tool shape
 
 const riskConfig: Record<
   RiskCategory,
@@ -90,13 +84,14 @@ const riskConfig: Record<
 };
 
 export default function AIRegisterPage() {
-  const [tools, setTools] = useState<Tool[]>([]);
+  const { data: session } = useSession();
+  const [tools, setTools] = useState<AiTool[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [riskFilter, setRiskFilter] = useState<RiskCategory | "all">("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTool, setEditingTool] = useState<Tool | null>(null);
+  const [editingTool, setEditingTool] = useState<AiTool | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -105,10 +100,19 @@ export default function AIRegisterPage() {
     purpose: "",
   });
 
+  // Check for organization
+  useEffect(() => {
+    if (session && !(session as any)?.session?.activeOrganizationId) {
+      window.location.href = "/dashboard";
+    }
+  }, [session]);
+
   // Load tools on mount
   useEffect(() => {
-    loadTools();
-  }, []);
+    if ((session as any)?.session?.activeOrganizationId) {
+      loadTools();
+    }
+  }, [session]);
 
   const loadTools = async () => {
     try {
@@ -124,7 +128,7 @@ export default function AIRegisterPage() {
     }
   };
 
-  const filteredTools = tools.filter((tool) => {
+  const filteredTools = tools.filter((tool: AiTool) => {
     const matchesSearch = tool.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -164,12 +168,12 @@ export default function AIRegisterPage() {
     setIsDialogOpen(false);
   };
 
-  const handleEdit = (tool: Tool) => {
+  const handleEdit = (tool: AiTool) => {
     setEditingTool(tool);
     setFormData({
       name: tool.name,
-      department: tool.department,
-      risk: tool.risk,
+      department: tool.department as Department,
+      risk: tool.risk as RiskCategory,
       purpose: tool.purpose,
     });
     setIsDialogOpen(true);

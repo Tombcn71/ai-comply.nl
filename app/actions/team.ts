@@ -21,13 +21,14 @@ export async function getTeamMembersAction(): Promise<Array<{
       headers: headersList,
     });
 
-    if (!session?.data?.user?.organization_id) {
+    const orgId = (session as any)?.session?.activeOrganizationId;
+    if (!orgId) {
       throw new Error('Unauthorized: No organization');
     }
 
     const result = await pool.query(
       'SELECT id, email, role, created_at FROM users WHERE organization_id = $1 ORDER BY created_at DESC',
-      [session.data.user.organization_id]
+      [orgId]
     );
 
     return result.rows;
@@ -46,12 +47,15 @@ export async function inviteTeamMemberAction(email: string): Promise<{
   tempPassword?: string;
 }> {
   try {
-    const session = await auth();
-    if (!session?.user?.organization_id) {
+    const headersList = await headers();
+    const session = await auth.api.getSession({ headers: headersList });
+    const orgId = (session as any)?.session?.activeOrganizationId;
+    const role = (session?.user as any)?.role;
+    if (!orgId) {
       throw new Error('Unauthorized: No organization');
     }
 
-    if (session.user.role !== 'admin') {
+    if (role !== 'admin') {
       throw new Error('Only admins can invite team members');
     }
 
@@ -74,7 +78,7 @@ export async function inviteTeamMemberAction(email: string): Promise<{
       `INSERT INTO users (email, password_hash, organization_id, role, created_at)
        VALUES ($1, $2, $3, $4, NOW())
        RETURNING id, email`,
-      [email.toLowerCase(), hashedPassword, session.user.organization_id, 'member']
+      [email.toLowerCase(), hashedPassword, orgId, 'member']
     );
 
     console.log('[Team Action] Team member invited:', email);
@@ -95,18 +99,21 @@ export async function inviteTeamMemberAction(email: string): Promise<{
  */
 export async function removeTeamMemberAction(userId: string): Promise<boolean> {
   try {
-    const session = await auth();
-    if (!session?.user?.organization_id) {
+    const headersList = await headers();
+    const session = await auth.api.getSession({ headers: headersList });
+    const orgId = (session as any)?.session?.activeOrganizationId;
+    const role = (session?.user as any)?.role;
+    if (!orgId) {
       throw new Error('Unauthorized: No organization');
     }
 
-    if (session.user.role !== 'admin') {
+    if (role !== 'admin') {
       throw new Error('Only admins can remove team members');
     }
 
     const result = await pool.query(
       'DELETE FROM users WHERE id = $1 AND organization_id = $2',
-      [userId, session.user.organization_id]
+      [userId, orgId]
     );
 
     if (result.rowCount === 0) {
@@ -128,18 +135,21 @@ export async function updateTeamMemberRoleAction(
   role: 'admin' | 'member'
 ): Promise<{ id: string; email: string; role: string }> {
   try {
-    const session = await auth();
-    if (!session?.user?.organization_id) {
+    const headersList = await headers();
+    const session = await auth.api.getSession({ headers: headersList });
+    const orgId = (session as any)?.session?.activeOrganizationId;
+    const userRole = (session?.user as any)?.role;
+    if (!orgId) {
       throw new Error('Unauthorized: No organization');
     }
 
-    if (session.user.role !== 'admin') {
+    if (userRole !== 'admin') {
       throw new Error('Only admins can update roles');
     }
 
     const result = await pool.query(
       'UPDATE users SET role = $1 WHERE id = $2 AND organization_id = $3 RETURNING id, email, role',
-      [role, userId, session.user.organization_id]
+      [role, userId, orgId]
     );
 
     if (result.rows.length === 0) {

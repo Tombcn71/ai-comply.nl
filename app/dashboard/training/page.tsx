@@ -38,19 +38,21 @@ import {
   createEmployeeAction,
   uploadCertificateAction,
 } from "@/app/actions/tools";
+import { useSession } from "@/lib/auth-client";
 
 interface Employee {
   id: string;
   name: string;
   department: string;
   status: string;
-  certificate_url?: string;
-  certified_date?: string;
+  certificate_url?: string | null;
+  certified_date?: string | null;
 }
 
 type Department = "Marketing" | "HR" | "IT" | "Sales";
 
 export default function TrainingPage() {
+  const { data: session } = useSession();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,10 +69,19 @@ export default function TrainingPage() {
     department: "" as Department | "",
   });
 
+  // Check for organization
+  useEffect(() => {
+    if (session && !(session as any)?.session?.activeOrganizationId) {
+      window.location.href = "/dashboard";
+    }
+  }, [session]);
+
   // Load data on mount
   useEffect(() => {
-    loadData();
-  }, []);
+    if ((session as any)?.session?.activeOrganizationId) {
+      loadData();
+    }
+  }, [session]);
 
   const loadData = async () => {
     try {

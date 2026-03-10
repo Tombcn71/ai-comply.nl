@@ -1,30 +1,36 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { authClient } from '@/lib/auth-client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RegisterPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       toast({
-        message: 'Wachtwoorden komen niet overeen',
-        type: 'error',
+        message: "Wachtwoorden komen niet overeen",
+        type: "error",
       });
       return;
     }
@@ -41,23 +47,23 @@ export default function RegisterPage() {
         {
           onSuccess: () => {
             toast({
-              message: 'Account succesvol aangemaakt! Inloggen...',
-              type: 'success',
+              message: "Account succesvol aangemaakt! Inloggen...",
+              type: "success",
             });
-            router.push('/dashboard');
+            router.push("/dashboard");
           },
           onError: (ctx) => {
             toast({
-              message: ctx.error.message || 'Registratie mislukt',
-              type: 'error',
+              message: ctx.error.message || "Registratie mislukt",
+              type: "error",
             });
           },
-        }
+        },
       );
     } catch (error) {
       toast({
-        message: 'Er is een onverwachte fout opgetreden',
-        type: 'error',
+        message: "Er is een onverwachte fout opgetreden",
+        type: "error",
       });
     } finally {
       setLoading(false);
@@ -126,12 +132,14 @@ export default function RegisterPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Registreren...' : 'Registreer'}
+              {loading ? "Registreren..." : "Registreer"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
             <span className="text-muted-foreground">Al een account? </span>
-            <Link href="/login" className="text-primary hover:underline font-medium">
+            <Link
+              href="/login"
+              className="text-primary hover:underline font-medium">
               Log in hier
             </Link>
           </div>

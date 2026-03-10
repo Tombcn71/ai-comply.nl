@@ -53,19 +53,19 @@ export function generateDossierPDF(data: DossierData): Blob {
   doc.setTextColor(TEXT_COLOR);
   yPosition = 100;
   doc.text('Gegenereerd op:', margin, yPosition);
-  doc.setFont(undefined, 'bold');
+  doc.setFont(undefined as any, 'bold');
   doc.text(data.timestamp, margin + 40, yPosition);
 
   yPosition += 15;
-  doc.setFont(undefined, 'normal');
+  doc.setFont(undefined as any, 'normal');
   doc.text('Bedrijf:', margin, yPosition);
-  doc.setFont(undefined, 'bold');
+  doc.setFont(undefined as any, 'bold');
   doc.text('AI Comply', margin + 40, yPosition);
 
   yPosition += 15;
-  doc.setFont(undefined, 'normal');
+  doc.setFont(undefined as any, 'normal');
   doc.text('Rapportage Type:', margin, yPosition);
-  doc.setFont(undefined, 'bold');
+  doc.setFont(undefined as any, 'bold');
   doc.text('Volledige Compliance Audit', margin + 40, yPosition);
 
   yPosition += 25;
@@ -74,7 +74,7 @@ export function generateDossierPDF(data: DossierData): Blob {
   const sampleText =
     'Dit dossier bevat een volledige inventarisatie van geregistreerde AI-systemen, ' +
     'bewijs van medewerkers-training en audit trails conform de Europese AI Act.';
-  doc.setFont(undefined, 'normal');
+  doc.setFont(undefined as any, 'normal');
   doc.text(sampleText, margin, yPosition, { maxWidth: pageWidth - 2 * margin });
 
   doc.addPage();
@@ -83,13 +83,13 @@ export function generateDossierPDF(data: DossierData): Blob {
   // PAGE 2: SUMMARY & AI-REGISTER
   doc.setFontSize(16);
   doc.setTextColor(26, 58, 82);
-  doc.setFont(undefined, 'bold');
+  doc.setFont(undefined as any, 'bold');
   doc.text('Samenvatting', margin, yPosition);
 
   yPosition += 12;
   doc.setFontSize(10);
   doc.setTextColor(TEXT_COLOR);
-  doc.setFont(undefined, 'normal');
+  doc.setFont(undefined as any, 'normal');
 
   const summaryBoxY = yPosition;
   doc.setDrawColor(BORDER_COLOR);
@@ -118,7 +118,7 @@ export function generateDossierPDF(data: DossierData): Blob {
   // AI-TOOLS TABLE
   doc.setFontSize(14);
   doc.setTextColor(26, 58, 82);
-  doc.setFont(undefined, 'bold');
+  doc.setFont(undefined as any, 'bold');
   doc.text('Sectie 1: AI-Systeem Register', margin, yPosition);
 
   yPosition += 10;
@@ -149,9 +149,7 @@ export function generateDossierPDF(data: DossierData): Blob {
     },
     borderColor: BORDER_COLOR,
     lineWidth: 0.3,
-  });
-
-  yPosition = (doc as any).lastAutoTable.finalY + 15;
+  } as any);
 
   // Check if we need a new page
   if (yPosition > pageHeight - 50) {
@@ -162,7 +160,7 @@ export function generateDossierPDF(data: DossierData): Blob {
   // AI-GELETTERDHEID SECTION
   doc.setFontSize(14);
   doc.setTextColor(26, 58, 82);
-  doc.setFont(undefined, 'bold');
+  doc.setFont(undefined as any, 'bold');
   doc.text('Sectie 2: AI-Geletterdheid Training', margin, yPosition);
 
   yPosition += 10;
@@ -170,7 +168,7 @@ export function generateDossierPDF(data: DossierData): Blob {
   // Training summary
   doc.setFontSize(10);
   doc.setTextColor(TEXT_COLOR);
-  doc.setFont(undefined, 'normal');
+  doc.setFont(undefined as any, 'normal');
   doc.text(
     `Totaal medewerkers: ${data.totals.totalEmployees} | Getraind: ${data.totals.certifiedEmployees}`,
     margin,
@@ -209,7 +207,7 @@ export function generateDossierPDF(data: DossierData): Blob {
       },
       borderColor: BORDER_COLOR,
       lineWidth: 0.3,
-    });
+  } as any);
   }
 
   yPosition = (doc as any).lastAutoTable.finalY + 15;
@@ -223,14 +221,14 @@ export function generateDossierPDF(data: DossierData): Blob {
   // AUDIT TRAIL SECTION
   doc.setFontSize(14);
   doc.setTextColor(26, 58, 82);
-  doc.setFont(undefined, 'bold');
+  doc.setFont(undefined as any, 'bold');
   doc.text('Sectie 3: Audit Trail', margin, yPosition);
 
   yPosition += 10;
 
   doc.setFontSize(9);
   doc.setTextColor(TEXT_COLOR);
-  doc.setFont(undefined, 'normal');
+  doc.setFont(undefined as any, 'normal');
 
   const auditBoxY = yPosition;
   doc.setDrawColor(ACCENT_COLOR);

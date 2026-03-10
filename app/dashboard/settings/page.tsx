@@ -10,8 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Building2, Upload, Lock, Check } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
+import { useEffect } from "react";
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
   const [companyName, setCompanyName] = useState("");
   const [contactPerson, setContactPerson] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -22,6 +25,12 @@ export default function SettingsPage() {
 
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+
+  useEffect(() => {
+    if (session && !(session as any)?.session?.activeOrganizationId) {
+      window.location.href = "/dashboard";
+    }
+  }, [session]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

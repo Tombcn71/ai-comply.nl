@@ -3,9 +3,10 @@ import { DashboardHeader } from "@/components/dashboard/header";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { ToolsTable } from "@/components/dashboard/tools-table";
 import { TrainingChart } from "@/components/dashboard/training-chart";
+import { CreateOrganizationForm } from "@/components/dashboard/create-organization";
 import { getAllEmployees, getAllTools, getCertificationStats } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 
 export const dynamic = 'force-dynamic';
 
@@ -15,29 +16,29 @@ export const metadata = {
 
 export default async function DashboardPage() {
   // Get session with Better Auth via API
-  const cookieStore = await cookies();
-  let session = null;
+  const headersList = await headers();
+  let session: any = null;
   
   try {
-    const response = await auth.api.getSession({
-      headers: {
-        cookie: cookieStore.toString(),
-      },
+    session = await auth.api.getSession({
+      headers: headersList,
     });
-    session = response?.data;
   } catch (error) {
     console.error('[Dashboard] Error fetching session:', error);
   }
 
-  if (!session?.user?.organization_id) {
+  if (!(session as any)?.session?.activeOrganizationId) {
     return (
       <div className="min-h-screen bg-muted/30">
         <DashboardSidebar />
         <div className="pl-0 pt-16 transition-all duration-300 lg:pl-64 lg:pt-0">
           <DashboardHeader />
           <main className="p-6">
-            <h1 className="text-2xl font-bold text-foreground">Geen toegang</h1>
-            <p className="text-muted-foreground">Geen organisatie gekoppeld aan uw account.</p>
+            <h1 className="text-2xl font-bold text-foreground mb-4">Welkom bij AI Comply</h1>
+            <p className="text-muted-foreground mb-6">
+              Om te beginnen, moet u eerst een organisatie aanmaken.
+            </p>
+            <CreateOrganizationForm />
           </main>
         </div>
       </div>
@@ -50,10 +51,11 @@ export default async function DashboardPage() {
   let stats = { total: 0, certified: 0, percentage: 0 };
 
   try {
+    const orgId = (session as any).session.activeOrganizationId;
     const results = await Promise.all([
-      getAllEmployees(session.user.organization_id),
-      getAllTools(session.user.organization_id),
-      getCertificationStats(session.user.organization_id),
+      getAllEmployees(orgId),
+      getAllTools(orgId),
+      getCertificationStats(orgId),
     ]);
     employees = results[0];
     tools = results[1];
@@ -77,7 +79,7 @@ export default async function DashboardPage() {
     : 0;
 
   // Calculate department stats for training chart
-  const departmentStats = employees.reduce(
+  const departmentStats: Record<string, { total: number; certified: number }> = employees.reduce(
     (acc, emp) => {
       const dept = emp.department;
       if (!acc[dept]) {
@@ -92,10 +94,12 @@ export default async function DashboardPage() {
     {} as Record<string, { total: number; certified: number }>
   );
 
-  const chartData = Object.entries(departmentStats).map(([dept, data]) => ({
-    department: dept,
-    completed: data.total > 0 ? Math.round((data.certified / data.total) * 100) : 0,
-  }));
+  const chartData = (Object.entries(departmentStats) as [string, { total: number; certified: number }][]).map(
+    ([dept, data]) => ({
+      department: dept,
+      completed: data.total > 0 ? Math.round((data.certified / data.total) * 100) : 0,
+    })
+  );
 
   // Calculate certification breakdown for pie chart
   const trainingBreakdown = [
@@ -108,7 +112,7 @@ export default async function DashboardPage() {
       title: "Geregistreerde AI-tools",
       value: totalTools.toString(),
       change: `${activeTools} conform`,
-      trend: "up",
+      trend: "up" as const,
       icon: "Server",
       color: "text-primary",
       bgColor: "bg-primary/10",
@@ -117,7 +121,7 @@ export default async function DashboardPage() {
       title: "Medewerkers getraind",
       value: `${certificationPercentage}%`,
       change: `${certifiedEmployees} van ${totalEmployees}`,
-      trend: "up",
+      trend: "up" as const,
       icon: "Users",
       color: "text-accent",
       bgColor: "bg-accent/10",
@@ -126,7 +130,7 @@ export default async function DashboardPage() {
       title: "Openstaande acties",
       value: pendingActions.toString(),
       change: "Tools vereisen actie",
-      trend: pendingActions === 0 ? "down" : "up",
+      trend: pendingActions === 0 ? ("down" as const) : ("up" as const),
       icon: "AlertTriangle",
       color: "text-amber-600",
       bgColor: "bg-amber-50",
@@ -135,7 +139,7 @@ export default async function DashboardPage() {
       title: "Compliance score",
       value: `${complianceScore}%`,
       change: "Voldoet aan AI Act",
-      trend: "up",
+      trend: "up" as const,
       icon: "CheckCircle2",
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
