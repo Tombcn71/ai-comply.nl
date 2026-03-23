@@ -1,34 +1,28 @@
-import React from "react";
-import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/next";
-import "./globals.css";
+import type { Metadata, Viewport } from 'next'
+import { Inter, JetBrains_Mono } from 'next/font/google'
+
+import './globals.css'
+
+const _inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const _jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains-mono' })
 
 export const metadata: Metadata = {
-  title: "AI Dossier.nl | Voldoe aan de AI Act zonder gedoe",
-  description: "Hét Nederlandse compliance-dashboard voor HR en ondernemers.",
-  generator: "v0.app",
-  icons: {
-    icon: [
-      { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },
-      { url: "/icon-dark-32x32.png", media: "(prefers-color-scheme: dark)" },
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
-    apple: "/apple-icon.png",
-  },
-};
+  title: 'Tailpress AI Migrator',
+  description: 'Transform legacy WordPress sites into modern, SEO-optimized Tailpress themes with AI-powered content migration.',
+}
+
+export const viewport: Viewport = {
+  themeColor: '#fcfcfc',
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
-    <html lang="nl">
-      {/* 'font-sans' zonder extra variabelen gebruikt nu het systeem-font */}
-      <body className="font-sans antialiased">
-        {children}
-        <Analytics />
-      </body>
+    <html lang="en">
+      <body className={`${_inter.variable} ${_jetbrainsMono.variable} font-sans antialiased`}>{children}</body>
     </html>
-  );
+  )
 }
